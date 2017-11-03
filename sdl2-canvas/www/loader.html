@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+        <script>
+         let importObject = {
+             imports: {
+                 imported_func: function(arg) {
+                     console.log(arg);
+                 }
+             }
+         };
+         fetch('app.wasm')
+             .then(response => response.arrayBuffer())
+             .then(bytes => WebAssembly.instantiate(bytes, importObject))
+             .then(result => {
+                 debugger;
+             });
+        </script>
+    </body>
+</html>
+

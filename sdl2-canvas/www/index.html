@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+        <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+        <script>
+         // This is read and used by `app.js`
+         var Module = {
+             wasmBinaryFile: "app.wasm",
+             noExitRuntime: true,
+             canvas: (function() {
+                 var canvas = document.getElementById('canvas');
+
+                 canvas.addEventListener("webglcontextlost", function(e) {
+                     alert('WebGL context lost. You will need to reload the page.');
+                     e.preventDefault();
+                 }, false);
+
+                 return canvas;
+             })(),
+             print: function(msg) {
+                 console.log(msg);
+             },
+             printErr: function(msg) {
+                 console.warn(msg);
+             }
+         }
+        </script>
+        <script src="app.js"></script>
+    </body>
+</html>
+

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+        <script>
+         // This is read and used by `app.js`
+         var Module = {
+             wasmBinaryFile: "app.wasm",
+             onRuntimeInitialized: main
+         }
+         function main() {
+             let rust_pow = Module.cwrap('rust_pow', 'number', ['number', 'number']);
+             console.log(rust_pow(2, 3));
+
+             Module.ccall('hello', 'null', []);
+         }
+        </script>
+        <script src="app.js"></script>
+    </body>
+</html>
+
