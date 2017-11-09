@@ -16,6 +16,7 @@ pub mod emscripten {
                                         simulate_infinite_loop: c_int);
 
         pub fn emscripten_cancel_main_loop();
+        pub fn emscripten_pause_main_loop();
         pub fn emscripten_get_now() -> c_float;
     }
 

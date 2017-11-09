@@ -1,5 +1,5 @@
 [package]
-name = "dom-demo"
+name = "dom"
 version = "0.1.0"
 authors = ["Amadeus <gliheng@gmail.com>"]
 
