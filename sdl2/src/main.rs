@@ -5,6 +5,7 @@ use std::io::Write;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
+use sdl2::mouse::MouseButton;
 use sdl2::rect::{Point, Rect};
 use sdl2::keyboard::Keycode;
 
@@ -59,6 +60,9 @@ fn main() {
                 },
                 Event::KeyDown { keycode: Some(Keycode::Down), ..} => {
                     rect.y += 10;
+                },
+                Event::MouseButtonDown { mouse_btn: MouseButton::Left, x, y, .. } => {
+                    println!("left mouse down! {} {}", x, y);
                 },
                 _ => {}
             }
