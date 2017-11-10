@@ -1,0 +1,9 @@
+[package]
+name = "wasm-demo"
+version = "0.1.0"
+authors = ["Amadeus <gliheng@gmail.com>"]
+
+[dependencies.sdl2]
+version = "0.30.0"
+# default-features = false
+# features = ["gfx"]
