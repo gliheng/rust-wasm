@@ -8,6 +8,12 @@
          var Module = {
              wasmBinaryFile: "app.wasm",
              noExitRuntime: true,
+             locateFilePackage: function(file) {
+                 if (file.endsWith(".data")) {
+                     return "icon.data";
+                 }
+                 return file;
+             },
              canvas: (function() {
                  var canvas = document.getElementById('canvas');
 

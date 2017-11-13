@@ -1,3 +1,197 @@
+
+var Module;
+
+if (typeof Module === 'undefined') Module = {};
+
+if (!Module.expectedDataFileDownloads) {
+  Module.expectedDataFileDownloads = 0;
+  Module.finishedDataFileDownloads = 0;
+}
+Module.expectedDataFileDownloads++;
+(function() {
+ var loadPackage = function(metadata) {
+
+    var PACKAGE_PATH;
+    if (typeof window === 'object') {
+      PACKAGE_PATH = window['encodeURIComponent'](window.location.pathname.toString().substring(0, window.location.pathname.toString().lastIndexOf('/')) + '/');
+    } else if (typeof location !== 'undefined') {
+      // worker
+      PACKAGE_PATH = encodeURIComponent(location.pathname.toString().substring(0, location.pathname.toString().lastIndexOf('/')) + '/');
+    } else {
+      throw 'using preloaded data can only be done on a web page or in a web worker';
+    }
+    var PACKAGE_NAME = '/home/clojure/github/rust-wasm/sdl2-basic/target/wasm32-unknown-emscripten/debug/deps/wasm_demo-44284e92a9413a65.data';
+    var REMOTE_PACKAGE_BASE = 'wasm_demo-44284e92a9413a65.data';
+    if (typeof Module['locateFilePackage'] === 'function' && !Module['locateFile']) {
+      Module['locateFile'] = Module['locateFilePackage'];
+      Module.printErr('warning: you defined Module.locateFilePackage, that has been renamed to Module.locateFile (using your locateFilePackage for now)');
+    }
+    var REMOTE_PACKAGE_NAME = typeof Module['locateFile'] === 'function' ?
+                              Module['locateFile'](REMOTE_PACKAGE_BASE) :
+                              ((Module['filePackagePrefixURL'] || '') + REMOTE_PACKAGE_BASE);
+  
+    var REMOTE_PACKAGE_SIZE = metadata.remote_package_size;
+    var PACKAGE_UUID = metadata.package_uuid;
+  
+    function fetchRemotePackage(packageName, packageSize, callback, errback) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', packageName, true);
+      xhr.responseType = 'arraybuffer';
+      xhr.onprogress = function(event) {
+        var url = packageName;
+        var size = packageSize;
+        if (event.total) size = event.total;
+        if (event.loaded) {
+          if (!xhr.addedTotal) {
+            xhr.addedTotal = true;
+            if (!Module.dataFileDownloads) Module.dataFileDownloads = {};
+            Module.dataFileDownloads[url] = {
+              loaded: event.loaded,
+              total: size
+            };
+          } else {
+            Module.dataFileDownloads[url].loaded = event.loaded;
+          }
+          var total = 0;
+          var loaded = 0;
+          var num = 0;
+          for (var download in Module.dataFileDownloads) {
+          var data = Module.dataFileDownloads[download];
+            total += data.total;
+            loaded += data.loaded;
+            num++;
+          }
+          total = Math.ceil(total * Module.expectedDataFileDownloads/num);
+          if (Module['setStatus']) Module['setStatus']('Downloading data... (' + loaded + '/' + total + ')');
+        } else if (!Module.dataFileDownloads) {
+          if (Module['setStatus']) Module['setStatus']('Downloading data...');
+        }
+      };
+      xhr.onerror = function(event) {
+        throw new Error("NetworkError for: " + packageName);
+      }
+      xhr.onload = function(event) {
+        if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) { // file URLs can return 0
+          var packageData = xhr.response;
+          callback(packageData);
+        } else {
+          throw new Error(xhr.statusText + " : " + xhr.responseURL);
+        }
+      };
+      xhr.send(null);
+    };
+
+    function handleError(error) {
+      console.error('package error:', error);
+    };
+  
+      var fetchedCallback = null;
+      var fetched = Module['getPreloadedPackage'] ? Module['getPreloadedPackage'](REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE) : null;
+
+      if (!fetched) fetchRemotePackage(REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE, function(data) {
+        if (fetchedCallback) {
+          fetchedCallback(data);
+          fetchedCallback = null;
+        } else {
+          fetched = data;
+        }
+      }, handleError);
+    
+  function runWithFS() {
+
+    function assert(check, msg) {
+      if (!check) throw msg + new Error().stack;
+    }
+
+    function DataRequest(start, end, crunched, audio) {
+      this.start = start;
+      this.end = end;
+      this.crunched = crunched;
+      this.audio = audio;
+    }
+    DataRequest.prototype = {
+      requests: {},
+      open: function(mode, name) {
+        this.name = name;
+        this.requests[name] = this;
+        Module['addRunDependency']('fp ' + this.name);
+      },
+      send: function() {},
+      onload: function() {
+        var byteArray = this.byteArray.subarray(this.start, this.end);
+
+          this.finish(byteArray);
+
+      },
+      finish: function(byteArray) {
+        var that = this;
+
+        Module['FS_createPreloadedFile'](this.name, null, byteArray, true, true, function() {
+          Module['removeRunDependency']('fp ' + that.name);
+        }, function() {
+          if (that.audio) {
+            Module['removeRunDependency']('fp ' + that.name); // workaround for chromium bug 124926 (still no audio with this, but at least we don't hang)
+          } else {
+            Module.printErr('Preloading file ' + that.name + ' failed');
+          }
+        }, false, true); // canOwn this data in the filesystem, it is a slide into the heap that will never change
+
+        this.requests[this.name] = null;
+      }
+    };
+
+        var files = metadata.files;
+        for (var i = 0; i < files.length; ++i) {
+          new DataRequest(files[i].start, files[i].end, files[i].crunched, files[i].audio).open('GET', files[i].filename);
+        }
+
+  
+    function processPackageData(arrayBuffer) {
+      Module.finishedDataFileDownloads++;
+      assert(arrayBuffer, 'Loading data file failed.');
+      assert(arrayBuffer instanceof ArrayBuffer, 'bad input to processPackageData');
+      var byteArray = new Uint8Array(arrayBuffer);
+      var curr;
+      
+        // copy the entire loaded file into a spot in the heap. Files will refer to slices in that. They cannot be freed though
+        // (we may be allocating before malloc is ready, during startup).
+        if (Module['SPLIT_MEMORY']) Module.printErr('warning: you should run the file packager with --no-heap-copy when SPLIT_MEMORY is used, otherwise copying into the heap may fail due to the splitting');
+        var ptr = Module['getMemory'](byteArray.length);
+        Module['HEAPU8'].set(byteArray, ptr);
+        DataRequest.prototype.byteArray = Module['HEAPU8'].subarray(ptr, ptr+byteArray.length);
+  
+          var files = metadata.files;
+          for (var i = 0; i < files.length; ++i) {
+            DataRequest.prototype.requests[files[i].filename].onload();
+          }
+              Module['removeRunDependency']('datafile_/home/clojure/github/rust-wasm/sdl2-basic/target/wasm32-unknown-emscripten/debug/deps/wasm_demo-44284e92a9413a65.data');
+
+    };
+    Module['addRunDependency']('datafile_/home/clojure/github/rust-wasm/sdl2-basic/target/wasm32-unknown-emscripten/debug/deps/wasm_demo-44284e92a9413a65.data');
+  
+    if (!Module.preloadResults) Module.preloadResults = {};
+  
+      Module.preloadResults[PACKAGE_NAME] = {fromCache: false};
+      if (fetched) {
+        processPackageData(fetched);
+        fetched = null;
+      } else {
+        fetchedCallback = processPackageData;
+      }
+    
+  }
+  if (Module['calledRun']) {
+    runWithFS();
+  } else {
+    if (!Module['preRun']) Module['preRun'] = [];
+    Module["preRun"].push(runWithFS); // FS is not initialized yet, wait for it
+  }
+
+ }
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 172002, "filename": "/icon.png"}], "remote_package_size": 172002, "package_uuid": "9ad5d8f9-256e-477f-bb49-018a10c7276a"});
+
+})();
+
 // The Module object: Our interface to the outside world. We import
 // and export values on it, and do the work to get that through
 // closure compiler if necessary. There are various ways Module can be used:
@@ -2064,7 +2258,7 @@ function _emscripten_asm_const_iii(code, a0, a1) {
 
 STATIC_BASE = Runtime.GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 67552;
+STATICTOP = STATIC_BASE + 67392;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -2073,7 +2267,7 @@ memoryInitializer = Module["wasmJSMethod"].indexOf("asmjs") >= 0 || Module["wasm
 
 
 
-var STATIC_BUMP = 67552;
+var STATIC_BUMP = 67392;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -7434,6 +7628,7 @@ function copyTempDouble(ptr) {
       return _emscripten_GetProcAddress(name_);
     }
 
+
   function _emscripten_get_pointerlock_status(pointerlockStatus) {
       if (pointerlockStatus) JSEvents.fillPointerlockChangeEventData(pointerlockStatus);
       if (!document.body || (!document.body.requestPointerLock && !document.body.mozRequestPointerLock && !document.body.webkitRequestPointerLock && !document.body.msRequestPointerLock)) {
@@ -8162,6 +8357,38 @@ function copyTempDouble(ptr) {
         return;
       }
       HEAP32[((params)>>2)]=GLctx.getTexParameter(target, pname);
+    }
+
+  
+  function _emscripten_get_preloaded_image_data(path, w, h) {
+      if (typeof path === "number") {
+        path = Pointer_stringify(path);
+      }
+  
+      path = PATH.resolve(path);
+  
+      var canvas = Module["preloadedImages"][path];
+      if (canvas) {
+        var ctx = canvas.getContext("2d");
+        var image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var buf = _malloc(canvas.width * canvas.height * 4);
+  
+        HEAPU8.set(image.data, buf);
+  
+        HEAP32[((w)>>2)]=canvas.width;
+        HEAP32[((h)>>2)]=canvas.height;
+        return buf;
+      }
+  
+      return 0;
+    }function _emscripten_get_preloaded_image_data_from_FILE(file, w, h) {
+      var fd = Module['_fileno'](file);
+      var stream = FS.getStream(fd);
+      if (stream) {
+        return _emscripten_get_preloaded_image_data(stream.path, w, h);
+      }
+  
+      return 0;
     }
 
   function _eglDestroySurface(display, surface) { 
@@ -10683,7 +10910,7 @@ function invoke_viiii(index,a1,a2,a3,a4) {
 
 Module.asmGlobalArg = { "Math": Math, "Int8Array": Int8Array, "Int16Array": Int16Array, "Int32Array": Int32Array, "Uint8Array": Uint8Array, "Uint16Array": Uint16Array, "Uint32Array": Uint32Array, "Float32Array": Float32Array, "Float64Array": Float64Array, "NaN": NaN, "Infinity": Infinity };
 
-Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enlargeMemory, "getTotalMemory": getTotalMemory, "abortOnCannotGrowMemory": abortOnCannotGrowMemory, "abortStackOverflow": abortStackOverflow, "nullFunc_iiiiiiii": nullFunc_iiiiiiii, "nullFunc_viiiii": nullFunc_viiiii, "nullFunc_vd": nullFunc_vd, "nullFunc_vf": nullFunc_vf, "nullFunc_vi": nullFunc_vi, "nullFunc_viiiiiii": nullFunc_viiiiiii, "nullFunc_vii": nullFunc_vii, "nullFunc_iiiiiii": nullFunc_iiiiiii, "nullFunc_ii": nullFunc_ii, "nullFunc_viiiiiiiiiii": nullFunc_viiiiiiiiiii, "nullFunc_vif": nullFunc_vif, "nullFunc_viffff": nullFunc_viffff, "nullFunc_jiji": nullFunc_jiji, "nullFunc_iiiii": nullFunc_iiiii, "nullFunc_iiii": nullFunc_iiii, "nullFunc_viff": nullFunc_viff, "nullFunc_vifff": nullFunc_vifff, "nullFunc_viiiiii": nullFunc_viiiiii, "nullFunc_viii": nullFunc_viii, "nullFunc_viiiiiiii": nullFunc_viiiiiiii, "nullFunc_v": nullFunc_v, "nullFunc_ji": nullFunc_ji, "nullFunc_viiiiiiiii": nullFunc_viiiiiiiii, "nullFunc_iii": nullFunc_iii, "nullFunc_iiiiii": nullFunc_iiiiii, "nullFunc_vfi": nullFunc_vfi, "nullFunc_i": nullFunc_i, "nullFunc_vff": nullFunc_vff, "nullFunc_vffff": nullFunc_vffff, "nullFunc_iiiiiiiiii": nullFunc_iiiiiiiiii, "nullFunc_vdddddd": nullFunc_vdddddd, "nullFunc_vdd": nullFunc_vdd, "nullFunc_iiiiidii": nullFunc_iiiiidii, "nullFunc_iiiiiiiii": nullFunc_iiiiiiiii, "nullFunc_viif": nullFunc_viif, "nullFunc_viiii": nullFunc_viiii, "invoke_iiiiiiii": invoke_iiiiiiii, "invoke_viiiii": invoke_viiiii, "invoke_vd": invoke_vd, "invoke_vf": invoke_vf, "invoke_vi": invoke_vi, "invoke_viiiiiii": invoke_viiiiiii, "invoke_vii": invoke_vii, "invoke_iiiiiii": invoke_iiiiiii, "invoke_ii": invoke_ii, "invoke_viiiiiiiiiii": invoke_viiiiiiiiiii, "invoke_vif": invoke_vif, "invoke_viffff": invoke_viffff, "invoke_jiji": invoke_jiji, "invoke_iiiii": invoke_iiiii, "invoke_iiii": invoke_iiii, "invoke_viff": invoke_viff, "invoke_vifff": invoke_vifff, "invoke_viiiiii": invoke_viiiiii, "invoke_viii": invoke_viii, "invoke_viiiiiiii": invoke_viiiiiiii, "invoke_v": invoke_v, "invoke_ji": invoke_ji, "invoke_viiiiiiiii": invoke_viiiiiiiii, "invoke_iii": invoke_iii, "invoke_iiiiii": invoke_iiiiii, "invoke_vfi": invoke_vfi, "invoke_i": invoke_i, "invoke_vff": invoke_vff, "invoke_vffff": invoke_vffff, "invoke_iiiiiiiiii": invoke_iiiiiiiiii, "invoke_vdddddd": invoke_vdddddd, "invoke_vdd": invoke_vdd, "invoke_iiiiidii": invoke_iiiiidii, "invoke_iiiiiiiii": invoke_iiiiiiiii, "invoke_viif": invoke_viif, "invoke_viiii": invoke_viiii, "_emscripten_glGetTexParameterfv": _emscripten_glGetTexParameterfv, "_emscripten_glDeleteVertexArrays": _emscripten_glDeleteVertexArrays, "_emscripten_set_mouseleave_callback": _emscripten_set_mouseleave_callback, "_emscripten_glGetRenderbufferParameteriv": _emscripten_glGetRenderbufferParameteriv, "_emscripten_glShaderSource": _emscripten_glShaderSource, "_emscripten_glReleaseShaderCompiler": _emscripten_glReleaseShaderCompiler, "_emscripten_glBlendFuncSeparate": _emscripten_glBlendFuncSeparate, "_emscripten_glCopyTexImage2D": _emscripten_glCopyTexImage2D, "_dlsym": _dlsym, "_emscripten_glGetShaderPrecisionFormat": _emscripten_glGetShaderPrecisionFormat, "_emscripten_glGetIntegerv": _emscripten_glGetIntegerv, "_emscripten_glGetTexParameteriv": _emscripten_glGetTexParameteriv, "_emscripten_glCullFace": _emscripten_glCullFace, "_emscripten_set_keyup_callback": _emscripten_set_keyup_callback, "_emscripten_glStencilMaskSeparate": _emscripten_glStencilMaskSeparate, "_emscripten_glViewport": _emscripten_glViewport, "_emscripten_glFrontFace": _emscripten_glFrontFace, "_eglTerminate": _eglTerminate, "_emscripten_glDrawArrays": _emscripten_glDrawArrays, "_emscripten_glUniform3fv": _emscripten_glUniform3fv, "__ZSt18uncaught_exceptionv": __ZSt18uncaught_exceptionv, "_emscripten_glUseProgram": _emscripten_glUseProgram, "_emscripten_glBlendColor": _emscripten_glBlendColor, "_emscripten_glDepthFunc": _emscripten_glDepthFunc, "_clock_gettime": _clock_gettime, "_emscripten_set_fullscreenchange_callback": _emscripten_set_fullscreenchange_callback, "_signal": _signal, "_emscripten_set_touchmove_callback": _emscripten_set_touchmove_callback, "_emscripten_set_main_loop_timing": _emscripten_set_main_loop_timing, "_emscripten_glDisableVertexAttribArray": _emscripten_glDisableVertexAttribArray, "_emscripten_glUniform3iv": _emscripten_glUniform3iv, "_emscripten_memcpy_big": _emscripten_memcpy_big, "_eglBindAPI": _eglBindAPI, "_eglCreateContext": _eglCreateContext, "_emscripten_glVertexPointer": _emscripten_glVertexPointer, "_emscripten_set_touchstart_callback": _emscripten_set_touchstart_callback, "_pthread_mutex_init": _pthread_mutex_init, "emscriptenWebGLComputeImageSize": emscriptenWebGLComputeImageSize, "_emscripten_glGetBooleanv": _emscripten_glGetBooleanv, "_emscripten_glClientActiveTexture": _emscripten_glClientActiveTexture, "_emscripten_glVertexAttribDivisor": _emscripten_glVertexAttribDivisor, "__emscripten_traverse_stack": __emscripten_traverse_stack, "_pthread_condattr_init": _pthread_condattr_init, "_llvm_stacksave": _llvm_stacksave, "_emscripten_glUniform1i": _emscripten_glUniform1i, "_pthread_mutexattr_settype": _pthread_mutexattr_settype, "_pthread_getspecific": _pthread_getspecific, "_emscripten_glGenBuffers": _emscripten_glGenBuffers, "_emscripten_glDeleteObjectARB": _emscripten_glDeleteObjectARB, "_emscripten_exit_fullscreen": _emscripten_exit_fullscreen, "_emscripten_glTexImage2D": _emscripten_glTexImage2D, "_emscripten_glVertexAttribPointer": _emscripten_glVertexAttribPointer, "_emscripten_glIsProgram": _emscripten_glIsProgram, "_emscripten_request_fullscreen_strategy": _emscripten_request_fullscreen_strategy, "_emscripten_glBlendEquationSeparate": _emscripten_glBlendEquationSeparate, "_emscripten_glGetString": _emscripten_glGetString, "_emscripten_glIsFramebuffer": _emscripten_glIsFramebuffer, "_emscripten_glIsEnabled": _emscripten_glIsEnabled, "_emscripten_glScissor": _emscripten_glScissor, "_emscripten_glFramebufferTexture2D": _emscripten_glFramebufferTexture2D, "_emscripten_glTexParameteriv": _emscripten_glTexParameteriv, "_emscripten_set_element_css_size": _emscripten_set_element_css_size, "_emscripten_glBindProgramARB": _emscripten_glBindProgramARB, "_emscripten_glStencilOpSeparate": _emscripten_glStencilOpSeparate, "_glutCreateWindow": _glutCreateWindow, "_emscripten_glFramebufferRenderbuffer": _emscripten_glFramebufferRenderbuffer, "___syscall140": ___syscall140, "_emscripten_glIsBuffer": _emscripten_glIsBuffer, "___syscall146": ___syscall146, "_pthread_rwlock_rdlock": _pthread_rwlock_rdlock, "_emscripten_glGetActiveAttrib": _emscripten_glGetActiveAttrib, "_emscripten_glAttachShader": _emscripten_glAttachShader, "_emscripten_glDrawRangeElements": _emscripten_glDrawRangeElements, "_emscripten_get_now_is_monotonic": _emscripten_get_now_is_monotonic, "_emscripten_asm_const_iiiii": _emscripten_asm_const_iiiii, "_emscripten_glCompressedTexSubImage2D": _emscripten_glCompressedTexSubImage2D, "_emscripten_glUniform2f": _emscripten_glUniform2f, "_emscripten_glTexParameterfv": _emscripten_glTexParameterfv, "_emscripten_glUniformMatrix2fv": _emscripten_glUniformMatrix2fv, "_emscripten_get_callstack_js": _emscripten_get_callstack_js, "_emscripten_glTexParameterf": _emscripten_glTexParameterf, "_emscripten_glGetAttachedShaders": _emscripten_glGetAttachedShaders, "_emscripten_glGenTextures": _emscripten_glGenTextures, "_emscripten_glDrawArraysInstanced": _emscripten_glDrawArraysInstanced, "_llvm_stackrestore": _llvm_stackrestore, "___cxa_free_exception": ___cxa_free_exception, "___cxa_find_matching_catch": ___cxa_find_matching_catch, "_eglGetConfigAttrib": _eglGetConfigAttrib, "_emscripten_glClear": _emscripten_glClear, "_emscripten_glHint": _emscripten_glHint, "_emscripten_asm_const_i": _emscripten_asm_const_i, "_emscripten_glIsVertexArray": _emscripten_glIsVertexArray, "_emscripten_glValidateProgram": _emscripten_glValidateProgram, "_emscripten_glVertexAttrib2fv": _emscripten_glVertexAttrib2fv, "_emscripten_glUniform3f": _emscripten_glUniform3f, "_emscripten_glUniform4iv": _emscripten_glUniform4iv, "_pthread_cond_destroy": _pthread_cond_destroy, "___setErrNo": ___setErrNo, "_eglGetProcAddress": _eglGetProcAddress, "_emscripten_glBindAttribLocation": _emscripten_glBindAttribLocation, "_eglSwapBuffers": _eglSwapBuffers, "_emscripten_set_mousedown_callback": _emscripten_set_mousedown_callback, "_emscripten_glDrawElements": _emscripten_glDrawElements, "_emscripten_set_canvas_size": _emscripten_set_canvas_size, "_emscripten_glVertexAttrib2f": _emscripten_glVertexAttrib2f, "___resumeException": ___resumeException, "_emscripten_glFlush": _emscripten_glFlush, "_emscripten_glPolygonOffset": _emscripten_glPolygonOffset, "_pthread_condattr_setclock": _pthread_condattr_setclock, "_emscripten_glCheckFramebufferStatus": _emscripten_glCheckFramebufferStatus, "_emscripten_glGetError": _emscripten_glGetError, "_emscripten_glClearDepthf": _emscripten_glClearDepthf, "_nanosleep": _nanosleep, "_emscripten_glBufferData": _emscripten_glBufferData, "_emscripten_glUniform3i": _emscripten_glUniform3i, "_emscripten_glDeleteShader": _emscripten_glDeleteShader, "_dladdr": _dladdr, "_emscripten_glReadPixels": _emscripten_glReadPixels, "_emscripten_glMatrixMode": _emscripten_glMatrixMode, "_eglCreateWindowSurface": _eglCreateWindowSurface, "_emscripten_glClearStencil": _emscripten_glClearStencil, "_emscripten_glGetUniformLocation": _emscripten_glGetUniformLocation, "emscriptenWebGLGet": emscriptenWebGLGet, "_emscripten_get_device_pixel_ratio": _emscripten_get_device_pixel_ratio, "_emscripten_set_mouseup_callback": _emscripten_set_mouseup_callback, "_emscripten_glEnableVertexAttribArray": _emscripten_glEnableVertexAttribArray, "_eglWaitClient": _eglWaitClient, "_emscripten_get_now": _emscripten_get_now, "__Unwind_GetIPInfo": __Unwind_GetIPInfo, "_emscripten_glNormalPointer": _emscripten_glNormalPointer, "_emscripten_glBindTexture": _emscripten_glBindTexture, "_emscripten_glTexCoordPointer": _emscripten_glTexCoordPointer, "_emscripten_glEnable": _emscripten_glEnable, "__registerRestoreOldStyle": __registerRestoreOldStyle, "_emscripten_glClearDepth": _emscripten_glClearDepth, "___lock": ___lock, "emscriptenWebGLGetTexPixelData": emscriptenWebGLGetTexPixelData, "___syscall6": ___syscall6, "___syscall5": ___syscall5, "___syscall145": ___syscall145, "_emscripten_glVertexAttrib3f": _emscripten_glVertexAttrib3f, "_pthread_condattr_destroy": _pthread_condattr_destroy, "_gettimeofday": _gettimeofday, "_emscripten_glVertexAttrib1f": _emscripten_glVertexAttrib1f, "_emscripten_glGetFramebufferAttachmentParameteriv": _emscripten_glGetFramebufferAttachmentParameteriv, "_eglWaitNative": _eglWaitNative, "_exit": _exit, "_emscripten_set_resize_callback": _emscripten_set_resize_callback, "_emscripten_glEnableClientState": _emscripten_glEnableClientState, "_emscripten_glUniform4i": _emscripten_glUniform4i, "_dlerror": _dlerror, "_emscripten_glDeleteBuffers": _emscripten_glDeleteBuffers, "_emscripten_glGetPointerv": _emscripten_glGetPointerv, "_emscripten_set_keypress_callback": _emscripten_set_keypress_callback, "__emscripten_sample_gamepad_data": __emscripten_sample_gamepad_data, "_emscripten_get_gamepad_status": _emscripten_get_gamepad_status, "_emscripten_glUniform4f": _emscripten_glUniform4f, "_eglChooseConfig": _eglChooseConfig, "_emscripten_glLoadMatrixf": _emscripten_glLoadMatrixf, "_dlclose": _dlclose, "_emscripten_glShaderBinary": _emscripten_glShaderBinary, "_pthread_rwlock_unlock": _pthread_rwlock_unlock, "___cxa_allocate_exception": ___cxa_allocate_exception, "_emscripten_glBlendFunc": _emscripten_glBlendFunc, "_emscripten_get_num_gamepads": _emscripten_get_num_gamepads, "___syscall221": ___syscall221, "_emscripten_glStencilMask": _emscripten_glStencilMask, "_emscripten_glUniform1iv": _emscripten_glUniform1iv, "_emscripten_glGetVertexAttribPointerv": _emscripten_glGetVertexAttribPointerv, "_emscripten_set_main_loop": _emscripten_set_main_loop, "_emscripten_glUniform2i": _emscripten_glUniform2i, "emscriptenWebGLGetUniform": emscriptenWebGLGetUniform, "_pthread_key_delete": _pthread_key_delete, "_emscripten_glGetAttribLocation": _emscripten_glGetAttribLocation, "_emscripten_glUniform1fv": _emscripten_glUniform1fv, "_emscripten_glGetActiveUniform": _emscripten_glGetActiveUniform, "___gxx_personality_v0": ___gxx_personality_v0, "emscriptenWebGLGetVertexAttrib": emscriptenWebGLGetVertexAttrib, "_emscripten_glUniform2iv": _emscripten_glUniform2iv, "_emscripten_glDisable": _emscripten_glDisable, "_eglSwapInterval": _eglSwapInterval, "_emscripten_glGetBufferParameteriv": _emscripten_glGetBufferParameteriv, "_emscripten_glDeleteProgram": _emscripten_glDeleteProgram, "_emscripten_set_gamepadconnected_callback": _emscripten_set_gamepadconnected_callback, "_glutDestroyWindow": _glutDestroyWindow, "_emscripten_glDrawElementsInstanced": _emscripten_glDrawElementsInstanced, "_emscripten_glVertexAttrib4f": _emscripten_glVertexAttrib4f, "_emscripten_glGetVertexAttribiv": _emscripten_glGetVertexAttribiv, "_emscripten_glTexSubImage2D": _emscripten_glTexSubImage2D, "_emscripten_glGetProgramiv": _emscripten_glGetProgramiv, "_emscripten_glPixelStorei": _emscripten_glPixelStorei, "_pthread_cond_signal": _pthread_cond_signal, "_pthread_mutex_destroy": _pthread_mutex_destroy, "_emscripten_glUniformMatrix3fv": _emscripten_glUniformMatrix3fv, "_emscripten_set_mouseenter_callback": _emscripten_set_mouseenter_callback, "_emscripten_glColorPointer": _emscripten_glColorPointer, "_emscripten_set_mousemove_callback": _emscripten_set_mousemove_callback, "_getenv": _getenv, "_pthread_key_create": _pthread_key_create, "_emscripten_glFinish": _emscripten_glFinish, "__setLetterbox": __setLetterbox, "_emscripten_set_gamepaddisconnected_callback": _emscripten_set_gamepaddisconnected_callback, "_emscripten_asm_const_iii": _emscripten_asm_const_iii, "_emscripten_glDepthMask": _emscripten_glDepthMask, "_emscripten_glDrawBuffers": _emscripten_glDrawBuffers, "_emscripten_glLineWidth": _emscripten_glLineWidth, "_eglMakeCurrent": _eglMakeCurrent, "_emscripten_glGetObjectParameterivARB": _emscripten_glGetObjectParameterivARB, "_emscripten_exit_pointerlock": _emscripten_exit_pointerlock, "_emscripten_glVertexAttrib4fv": _emscripten_glVertexAttrib4fv, "_emscripten_glStencilFunc": _emscripten_glStencilFunc, "_abort": _abort, "_emscripten_glGetUniformiv": _emscripten_glGetUniformiv, "_emscripten_glRotatef": _emscripten_glRotatef, "_emscripten_glGetShaderiv": _emscripten_glGetShaderiv, "_llvm_trap": _llvm_trap, "__Unwind_Backtrace": __Unwind_Backtrace, "_emscripten_glGenFramebuffers": _emscripten_glGenFramebuffers, "_emscripten_glUniformMatrix4fv": _emscripten_glUniformMatrix4fv, "_emscripten_glLoadIdentity": _emscripten_glLoadIdentity, "_pthread_cond_wait": _pthread_cond_wait, "_emscripten_set_blur_callback": _emscripten_set_blur_callback, "_emscripten_glUniform1f": _emscripten_glUniform1f, "_glutInitDisplayMode": _glutInitDisplayMode, "_emscripten_glBindFramebuffer": _emscripten_glBindFramebuffer, "_eglWaitGL": _eglWaitGL, "_emscripten_glIsRenderbuffer": _emscripten_glIsRenderbuffer, "___buildEnvironment": ___buildEnvironment, "_emscripten_glRenderbufferStorage": _emscripten_glRenderbufferStorage, "_eglDestroySurface": _eglDestroySurface, "_sigaction": _sigaction, "_emscripten_set_keydown_callback": _emscripten_set_keydown_callback, "_emscripten_glTexParameteri": _emscripten_glTexParameteri, "_emscripten_set_touchcancel_callback": _emscripten_set_touchcancel_callback, "_emscripten_glCreateShader": _emscripten_glCreateShader, "___syscall4": ___syscall4, "_emscripten_glCopyTexSubImage2D": _emscripten_glCopyTexSubImage2D, "_eglInitialize": _eglInitialize, "___cxa_find_matching_catch_2": ___cxa_find_matching_catch_2, "___cxa_find_matching_catch_3": ___cxa_find_matching_catch_3, "_emscripten_glDeleteTextures": _emscripten_glDeleteTextures, "_emscripten_glBindRenderbuffer": _emscripten_glBindRenderbuffer, "_emscripten_asm_const_ii": _emscripten_asm_const_ii, "__Unwind_FindEnclosingFunction": __Unwind_FindEnclosingFunction, "_emscripten_glGetShaderSource": _emscripten_glGetShaderSource, "_emscripten_set_touchend_callback": _emscripten_set_touchend_callback, "_emscripten_set_focus_callback": _emscripten_set_focus_callback, "_pthread_mutexattr_destroy": _pthread_mutexattr_destroy, "_emscripten_glGetVertexAttribfv": _emscripten_glGetVertexAttribfv, "_emscripten_get_element_css_size": _emscripten_get_element_css_size, "_emscripten_request_pointerlock": _emscripten_request_pointerlock, "_emscripten_glDeleteFramebuffers": _emscripten_glDeleteFramebuffers, "_emscripten_glVertexAttrib3fv": _emscripten_glVertexAttrib3fv, "_emscripten_glUniform2fv": _emscripten_glUniform2fv, "_emscripten_glCompileShader": _emscripten_glCompileShader, "_glClear": _glClear, "_emscripten_glFrustum": _emscripten_glFrustum, "_emscripten_glSampleCoverage": _emscripten_glSampleCoverage, "_emscripten_glDepthRangef": _emscripten_glDepthRangef, "__exit": __exit, "_emscripten_glGetShaderInfoLog": _emscripten_glGetShaderInfoLog, "_emscripten_glStencilOp": _emscripten_glStencilOp, "_eglGetDisplay": _eglGetDisplay, "_emscripten_glGenerateMipmap": _emscripten_glGenerateMipmap, "_emscripten_glColorMask": _emscripten_glColorMask, "_emscripten_glLinkProgram": _emscripten_glLinkProgram, "_emscripten_glBlendEquation": _emscripten_glBlendEquation, "_usleep": _usleep, "_emscripten_glIsTexture": _emscripten_glIsTexture, "_emscripten_glVertexAttrib1fv": _emscripten_glVertexAttrib1fv, "_emscripten_glBindVertexArray": _emscripten_glBindVertexArray, "_emscripten_get_pointerlock_status": _emscripten_get_pointerlock_status, "_emscripten_glActiveTexture": _emscripten_glActiveTexture, "_emscripten_set_wheel_callback": _emscripten_set_wheel_callback, "_emscripten_glGenRenderbuffers": _emscripten_glGenRenderbuffers, "___syscall54": ___syscall54, "___unlock": ___unlock, "_emscripten_glBufferSubData": _emscripten_glBufferSubData, "_emscripten_glDepthRange": _emscripten_glDepthRange, "_eglDestroyContext": _eglDestroyContext, "_emscripten_glIsShader": _emscripten_glIsShader, "_emscripten_glGetProgramInfoLog": _emscripten_glGetProgramInfoLog, "_pthread_cond_init": _pthread_cond_init, "_pthread_mutexattr_init": _pthread_mutexattr_init, "_pthread_setspecific": _pthread_setspecific, "_emscripten_glUniform4fv": _emscripten_glUniform4fv, "_emscripten_asm_const_iiii": _emscripten_asm_const_iiii, "___cxa_throw": ___cxa_throw, "_emscripten_set_visibilitychange_callback": _emscripten_set_visibilitychange_callback, "_emscripten_glGetUniformfv": _emscripten_glGetUniformfv, "_emscripten_glCompressedTexImage2D": _emscripten_glCompressedTexImage2D, "_emscripten_glClearColor": _emscripten_glClearColor, "_emscripten_glStencilFuncSeparate": _emscripten_glStencilFuncSeparate, "_emscripten_glCreateProgram": _emscripten_glCreateProgram, "_emscripten_glGenVertexArrays": _emscripten_glGenVertexArrays, "_emscripten_glGetInfoLogARB": _emscripten_glGetInfoLogARB, "_emscripten_glDeleteRenderbuffers": _emscripten_glDeleteRenderbuffers, "_emscripten_glBindBuffer": _emscripten_glBindBuffer, "_emscripten_glGetFloatv": _emscripten_glGetFloatv, "_emscripten_glDetachShader": _emscripten_glDetachShader, "_emscripten_do_request_fullscreen": _emscripten_do_request_fullscreen, "DYNAMICTOP_PTR": DYNAMICTOP_PTR, "tempDoublePtr": tempDoublePtr, "ABORT": ABORT, "STACKTOP": STACKTOP, "STACK_MAX": STACK_MAX };
+Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enlargeMemory, "getTotalMemory": getTotalMemory, "abortOnCannotGrowMemory": abortOnCannotGrowMemory, "abortStackOverflow": abortStackOverflow, "nullFunc_iiiiiiii": nullFunc_iiiiiiii, "nullFunc_viiiii": nullFunc_viiiii, "nullFunc_vd": nullFunc_vd, "nullFunc_vf": nullFunc_vf, "nullFunc_vi": nullFunc_vi, "nullFunc_viiiiiii": nullFunc_viiiiiii, "nullFunc_vii": nullFunc_vii, "nullFunc_iiiiiii": nullFunc_iiiiiii, "nullFunc_ii": nullFunc_ii, "nullFunc_viiiiiiiiiii": nullFunc_viiiiiiiiiii, "nullFunc_vif": nullFunc_vif, "nullFunc_viffff": nullFunc_viffff, "nullFunc_jiji": nullFunc_jiji, "nullFunc_iiiii": nullFunc_iiiii, "nullFunc_iiii": nullFunc_iiii, "nullFunc_viff": nullFunc_viff, "nullFunc_vifff": nullFunc_vifff, "nullFunc_viiiiii": nullFunc_viiiiii, "nullFunc_viii": nullFunc_viii, "nullFunc_viiiiiiii": nullFunc_viiiiiiii, "nullFunc_v": nullFunc_v, "nullFunc_ji": nullFunc_ji, "nullFunc_viiiiiiiii": nullFunc_viiiiiiiii, "nullFunc_iii": nullFunc_iii, "nullFunc_iiiiii": nullFunc_iiiiii, "nullFunc_vfi": nullFunc_vfi, "nullFunc_i": nullFunc_i, "nullFunc_vff": nullFunc_vff, "nullFunc_vffff": nullFunc_vffff, "nullFunc_iiiiiiiiii": nullFunc_iiiiiiiiii, "nullFunc_vdddddd": nullFunc_vdddddd, "nullFunc_vdd": nullFunc_vdd, "nullFunc_iiiiidii": nullFunc_iiiiidii, "nullFunc_iiiiiiiii": nullFunc_iiiiiiiii, "nullFunc_viif": nullFunc_viif, "nullFunc_viiii": nullFunc_viiii, "invoke_iiiiiiii": invoke_iiiiiiii, "invoke_viiiii": invoke_viiiii, "invoke_vd": invoke_vd, "invoke_vf": invoke_vf, "invoke_vi": invoke_vi, "invoke_viiiiiii": invoke_viiiiiii, "invoke_vii": invoke_vii, "invoke_iiiiiii": invoke_iiiiiii, "invoke_ii": invoke_ii, "invoke_viiiiiiiiiii": invoke_viiiiiiiiiii, "invoke_vif": invoke_vif, "invoke_viffff": invoke_viffff, "invoke_jiji": invoke_jiji, "invoke_iiiii": invoke_iiiii, "invoke_iiii": invoke_iiii, "invoke_viff": invoke_viff, "invoke_vifff": invoke_vifff, "invoke_viiiiii": invoke_viiiiii, "invoke_viii": invoke_viii, "invoke_viiiiiiii": invoke_viiiiiiii, "invoke_v": invoke_v, "invoke_ji": invoke_ji, "invoke_viiiiiiiii": invoke_viiiiiiiii, "invoke_iii": invoke_iii, "invoke_iiiiii": invoke_iiiiii, "invoke_vfi": invoke_vfi, "invoke_i": invoke_i, "invoke_vff": invoke_vff, "invoke_vffff": invoke_vffff, "invoke_iiiiiiiiii": invoke_iiiiiiiiii, "invoke_vdddddd": invoke_vdddddd, "invoke_vdd": invoke_vdd, "invoke_iiiiidii": invoke_iiiiidii, "invoke_iiiiiiiii": invoke_iiiiiiiii, "invoke_viif": invoke_viif, "invoke_viiii": invoke_viiii, "_emscripten_glGetTexParameterfv": _emscripten_glGetTexParameterfv, "_emscripten_glDeleteVertexArrays": _emscripten_glDeleteVertexArrays, "_emscripten_set_mouseleave_callback": _emscripten_set_mouseleave_callback, "_emscripten_glGetRenderbufferParameteriv": _emscripten_glGetRenderbufferParameteriv, "_emscripten_glShaderSource": _emscripten_glShaderSource, "_emscripten_glReleaseShaderCompiler": _emscripten_glReleaseShaderCompiler, "_emscripten_glBlendFuncSeparate": _emscripten_glBlendFuncSeparate, "_emscripten_glCopyTexImage2D": _emscripten_glCopyTexImage2D, "_dlsym": _dlsym, "_emscripten_glGetShaderPrecisionFormat": _emscripten_glGetShaderPrecisionFormat, "_emscripten_glGetIntegerv": _emscripten_glGetIntegerv, "_emscripten_glGetTexParameteriv": _emscripten_glGetTexParameteriv, "_emscripten_glCullFace": _emscripten_glCullFace, "_emscripten_set_keyup_callback": _emscripten_set_keyup_callback, "_emscripten_glStencilMaskSeparate": _emscripten_glStencilMaskSeparate, "_emscripten_glViewport": _emscripten_glViewport, "_emscripten_glFrontFace": _emscripten_glFrontFace, "_eglTerminate": _eglTerminate, "_emscripten_glDrawArrays": _emscripten_glDrawArrays, "_emscripten_glUniform3fv": _emscripten_glUniform3fv, "__ZSt18uncaught_exceptionv": __ZSt18uncaught_exceptionv, "_emscripten_glUseProgram": _emscripten_glUseProgram, "_emscripten_glBlendColor": _emscripten_glBlendColor, "_emscripten_glDepthFunc": _emscripten_glDepthFunc, "_clock_gettime": _clock_gettime, "_emscripten_set_fullscreenchange_callback": _emscripten_set_fullscreenchange_callback, "_signal": _signal, "_emscripten_set_touchmove_callback": _emscripten_set_touchmove_callback, "_emscripten_set_main_loop_timing": _emscripten_set_main_loop_timing, "_emscripten_glDisableVertexAttribArray": _emscripten_glDisableVertexAttribArray, "_emscripten_glUniform3iv": _emscripten_glUniform3iv, "_emscripten_memcpy_big": _emscripten_memcpy_big, "_eglBindAPI": _eglBindAPI, "_eglCreateContext": _eglCreateContext, "_emscripten_glVertexPointer": _emscripten_glVertexPointer, "_emscripten_set_touchstart_callback": _emscripten_set_touchstart_callback, "_pthread_mutex_init": _pthread_mutex_init, "emscriptenWebGLComputeImageSize": emscriptenWebGLComputeImageSize, "_emscripten_glGetBooleanv": _emscripten_glGetBooleanv, "_emscripten_glClientActiveTexture": _emscripten_glClientActiveTexture, "_emscripten_glVertexAttribDivisor": _emscripten_glVertexAttribDivisor, "__emscripten_traverse_stack": __emscripten_traverse_stack, "_pthread_condattr_init": _pthread_condattr_init, "_llvm_stacksave": _llvm_stacksave, "_emscripten_glUniform1i": _emscripten_glUniform1i, "_pthread_mutexattr_settype": _pthread_mutexattr_settype, "_pthread_getspecific": _pthread_getspecific, "_emscripten_glGenBuffers": _emscripten_glGenBuffers, "_emscripten_glDeleteObjectARB": _emscripten_glDeleteObjectARB, "_emscripten_exit_fullscreen": _emscripten_exit_fullscreen, "_emscripten_glTexImage2D": _emscripten_glTexImage2D, "_emscripten_glVertexAttribPointer": _emscripten_glVertexAttribPointer, "_emscripten_glIsProgram": _emscripten_glIsProgram, "_emscripten_request_fullscreen_strategy": _emscripten_request_fullscreen_strategy, "_emscripten_glBlendEquationSeparate": _emscripten_glBlendEquationSeparate, "_emscripten_glGetString": _emscripten_glGetString, "_emscripten_glIsFramebuffer": _emscripten_glIsFramebuffer, "_emscripten_glIsEnabled": _emscripten_glIsEnabled, "_emscripten_glScissor": _emscripten_glScissor, "_emscripten_glFramebufferTexture2D": _emscripten_glFramebufferTexture2D, "_emscripten_glTexParameteriv": _emscripten_glTexParameteriv, "_emscripten_set_element_css_size": _emscripten_set_element_css_size, "_emscripten_glBindProgramARB": _emscripten_glBindProgramARB, "_emscripten_glStencilOpSeparate": _emscripten_glStencilOpSeparate, "_glutCreateWindow": _glutCreateWindow, "_emscripten_glFramebufferRenderbuffer": _emscripten_glFramebufferRenderbuffer, "___syscall140": ___syscall140, "_emscripten_glIsBuffer": _emscripten_glIsBuffer, "___syscall146": ___syscall146, "_pthread_rwlock_rdlock": _pthread_rwlock_rdlock, "_emscripten_glGetActiveAttrib": _emscripten_glGetActiveAttrib, "_emscripten_glAttachShader": _emscripten_glAttachShader, "_emscripten_glDrawRangeElements": _emscripten_glDrawRangeElements, "_emscripten_get_now_is_monotonic": _emscripten_get_now_is_monotonic, "_emscripten_asm_const_iiiii": _emscripten_asm_const_iiiii, "_emscripten_glCompressedTexSubImage2D": _emscripten_glCompressedTexSubImage2D, "_emscripten_glUniform2f": _emscripten_glUniform2f, "_glutInitDisplayMode": _glutInitDisplayMode, "_emscripten_glTexParameterfv": _emscripten_glTexParameterfv, "_emscripten_glUniformMatrix2fv": _emscripten_glUniformMatrix2fv, "_emscripten_get_callstack_js": _emscripten_get_callstack_js, "_emscripten_glTexParameterf": _emscripten_glTexParameterf, "_emscripten_glGetAttachedShaders": _emscripten_glGetAttachedShaders, "_emscripten_glGenTextures": _emscripten_glGenTextures, "_emscripten_glDrawArraysInstanced": _emscripten_glDrawArraysInstanced, "_llvm_stackrestore": _llvm_stackrestore, "_emscripten_get_preloaded_image_data_from_FILE": _emscripten_get_preloaded_image_data_from_FILE, "___cxa_free_exception": ___cxa_free_exception, "___cxa_find_matching_catch": ___cxa_find_matching_catch, "_eglGetConfigAttrib": _eglGetConfigAttrib, "_emscripten_glClear": _emscripten_glClear, "_emscripten_glHint": _emscripten_glHint, "_emscripten_asm_const_i": _emscripten_asm_const_i, "_emscripten_glIsVertexArray": _emscripten_glIsVertexArray, "_emscripten_glValidateProgram": _emscripten_glValidateProgram, "_emscripten_glVertexAttrib2fv": _emscripten_glVertexAttrib2fv, "_emscripten_glUniform3f": _emscripten_glUniform3f, "_emscripten_glUniform4iv": _emscripten_glUniform4iv, "_pthread_cond_destroy": _pthread_cond_destroy, "___setErrNo": ___setErrNo, "_eglGetProcAddress": _eglGetProcAddress, "_emscripten_glBindAttribLocation": _emscripten_glBindAttribLocation, "_eglSwapBuffers": _eglSwapBuffers, "_emscripten_set_mousedown_callback": _emscripten_set_mousedown_callback, "_emscripten_glDrawElements": _emscripten_glDrawElements, "_emscripten_set_canvas_size": _emscripten_set_canvas_size, "_emscripten_glVertexAttrib2f": _emscripten_glVertexAttrib2f, "___resumeException": ___resumeException, "_emscripten_glFlush": _emscripten_glFlush, "_emscripten_glPolygonOffset": _emscripten_glPolygonOffset, "_pthread_condattr_setclock": _pthread_condattr_setclock, "_emscripten_glCheckFramebufferStatus": _emscripten_glCheckFramebufferStatus, "_emscripten_glGetError": _emscripten_glGetError, "_emscripten_glClearDepthf": _emscripten_glClearDepthf, "_nanosleep": _nanosleep, "_emscripten_glBufferData": _emscripten_glBufferData, "_emscripten_glUniform3i": _emscripten_glUniform3i, "_emscripten_glDeleteShader": _emscripten_glDeleteShader, "_dladdr": _dladdr, "_emscripten_glReadPixels": _emscripten_glReadPixels, "_emscripten_glMatrixMode": _emscripten_glMatrixMode, "_eglCreateWindowSurface": _eglCreateWindowSurface, "_emscripten_glClearStencil": _emscripten_glClearStencil, "_emscripten_glGetUniformLocation": _emscripten_glGetUniformLocation, "emscriptenWebGLGet": emscriptenWebGLGet, "_emscripten_get_device_pixel_ratio": _emscripten_get_device_pixel_ratio, "_emscripten_set_mouseup_callback": _emscripten_set_mouseup_callback, "_emscripten_glEnableVertexAttribArray": _emscripten_glEnableVertexAttribArray, "_eglWaitClient": _eglWaitClient, "_emscripten_get_now": _emscripten_get_now, "__Unwind_GetIPInfo": __Unwind_GetIPInfo, "_emscripten_glNormalPointer": _emscripten_glNormalPointer, "_emscripten_glBindTexture": _emscripten_glBindTexture, "_emscripten_glTexCoordPointer": _emscripten_glTexCoordPointer, "_emscripten_glEnable": _emscripten_glEnable, "__registerRestoreOldStyle": __registerRestoreOldStyle, "_emscripten_glClearDepth": _emscripten_glClearDepth, "___lock": ___lock, "emscriptenWebGLGetTexPixelData": emscriptenWebGLGetTexPixelData, "___syscall6": ___syscall6, "___syscall5": ___syscall5, "___syscall145": ___syscall145, "_emscripten_glVertexAttrib3f": _emscripten_glVertexAttrib3f, "_pthread_condattr_destroy": _pthread_condattr_destroy, "_gettimeofday": _gettimeofday, "_emscripten_glVertexAttrib1f": _emscripten_glVertexAttrib1f, "_emscripten_glGetFramebufferAttachmentParameteriv": _emscripten_glGetFramebufferAttachmentParameteriv, "_eglWaitNative": _eglWaitNative, "_exit": _exit, "_emscripten_set_resize_callback": _emscripten_set_resize_callback, "_emscripten_glEnableClientState": _emscripten_glEnableClientState, "_emscripten_glUniform4i": _emscripten_glUniform4i, "_dlerror": _dlerror, "_emscripten_glDeleteBuffers": _emscripten_glDeleteBuffers, "_emscripten_glGetPointerv": _emscripten_glGetPointerv, "_emscripten_set_keypress_callback": _emscripten_set_keypress_callback, "__emscripten_sample_gamepad_data": __emscripten_sample_gamepad_data, "_emscripten_get_gamepad_status": _emscripten_get_gamepad_status, "_emscripten_glUniform4f": _emscripten_glUniform4f, "_eglChooseConfig": _eglChooseConfig, "_emscripten_glLoadMatrixf": _emscripten_glLoadMatrixf, "_dlclose": _dlclose, "_emscripten_glShaderBinary": _emscripten_glShaderBinary, "_pthread_rwlock_unlock": _pthread_rwlock_unlock, "___cxa_allocate_exception": ___cxa_allocate_exception, "_emscripten_glBlendFunc": _emscripten_glBlendFunc, "_emscripten_get_num_gamepads": _emscripten_get_num_gamepads, "___syscall221": ___syscall221, "_emscripten_glStencilMask": _emscripten_glStencilMask, "_emscripten_glUniform1iv": _emscripten_glUniform1iv, "_emscripten_glGetVertexAttribPointerv": _emscripten_glGetVertexAttribPointerv, "_emscripten_set_main_loop": _emscripten_set_main_loop, "_emscripten_glUniform2i": _emscripten_glUniform2i, "emscriptenWebGLGetUniform": emscriptenWebGLGetUniform, "_pthread_key_delete": _pthread_key_delete, "_emscripten_glGetAttribLocation": _emscripten_glGetAttribLocation, "_emscripten_glUniform1fv": _emscripten_glUniform1fv, "_emscripten_glGetActiveUniform": _emscripten_glGetActiveUniform, "___gxx_personality_v0": ___gxx_personality_v0, "emscriptenWebGLGetVertexAttrib": emscriptenWebGLGetVertexAttrib, "_emscripten_get_preloaded_image_data": _emscripten_get_preloaded_image_data, "_emscripten_glDisable": _emscripten_glDisable, "_eglSwapInterval": _eglSwapInterval, "_emscripten_glGetBufferParameteriv": _emscripten_glGetBufferParameteriv, "_emscripten_glDeleteProgram": _emscripten_glDeleteProgram, "_emscripten_set_gamepadconnected_callback": _emscripten_set_gamepadconnected_callback, "_glutDestroyWindow": _glutDestroyWindow, "_emscripten_glDrawElementsInstanced": _emscripten_glDrawElementsInstanced, "_emscripten_glVertexAttrib4f": _emscripten_glVertexAttrib4f, "_emscripten_glGetVertexAttribiv": _emscripten_glGetVertexAttribiv, "_emscripten_glCreateShader": _emscripten_glCreateShader, "_emscripten_glGetProgramiv": _emscripten_glGetProgramiv, "_emscripten_glPixelStorei": _emscripten_glPixelStorei, "_pthread_cond_signal": _pthread_cond_signal, "_pthread_mutex_destroy": _pthread_mutex_destroy, "_emscripten_glUniformMatrix3fv": _emscripten_glUniformMatrix3fv, "_emscripten_set_mouseenter_callback": _emscripten_set_mouseenter_callback, "_emscripten_glColorPointer": _emscripten_glColorPointer, "_getenv": _getenv, "_pthread_key_create": _pthread_key_create, "_emscripten_glFinish": _emscripten_glFinish, "__setLetterbox": __setLetterbox, "_emscripten_set_gamepaddisconnected_callback": _emscripten_set_gamepaddisconnected_callback, "_emscripten_asm_const_iii": _emscripten_asm_const_iii, "_emscripten_glDepthMask": _emscripten_glDepthMask, "_emscripten_glDrawBuffers": _emscripten_glDrawBuffers, "_emscripten_glLineWidth": _emscripten_glLineWidth, "_eglMakeCurrent": _eglMakeCurrent, "_emscripten_glGetObjectParameterivARB": _emscripten_glGetObjectParameterivARB, "_emscripten_exit_pointerlock": _emscripten_exit_pointerlock, "_emscripten_glTexParameteri": _emscripten_glTexParameteri, "_emscripten_glVertexAttrib4fv": _emscripten_glVertexAttrib4fv, "_emscripten_glStencilFunc": _emscripten_glStencilFunc, "_abort": _abort, "_emscripten_glGetUniformiv": _emscripten_glGetUniformiv, "_emscripten_glRotatef": _emscripten_glRotatef, "_emscripten_glGetShaderiv": _emscripten_glGetShaderiv, "_llvm_trap": _llvm_trap, "__Unwind_Backtrace": __Unwind_Backtrace, "_emscripten_glGenFramebuffers": _emscripten_glGenFramebuffers, "_emscripten_glUniformMatrix4fv": _emscripten_glUniformMatrix4fv, "_emscripten_glLoadIdentity": _emscripten_glLoadIdentity, "_pthread_cond_wait": _pthread_cond_wait, "_emscripten_set_blur_callback": _emscripten_set_blur_callback, "_emscripten_glUniform1f": _emscripten_glUniform1f, "_emscripten_glUniform2iv": _emscripten_glUniform2iv, "_emscripten_glBindFramebuffer": _emscripten_glBindFramebuffer, "_eglWaitGL": _eglWaitGL, "_emscripten_glIsRenderbuffer": _emscripten_glIsRenderbuffer, "___buildEnvironment": ___buildEnvironment, "_emscripten_glRenderbufferStorage": _emscripten_glRenderbufferStorage, "_eglDestroySurface": _eglDestroySurface, "_sigaction": _sigaction, "_emscripten_set_keydown_callback": _emscripten_set_keydown_callback, "_emscripten_set_mousemove_callback": _emscripten_set_mousemove_callback, "_emscripten_set_touchcancel_callback": _emscripten_set_touchcancel_callback, "_emscripten_glTexSubImage2D": _emscripten_glTexSubImage2D, "___syscall4": ___syscall4, "_emscripten_glCopyTexSubImage2D": _emscripten_glCopyTexSubImage2D, "_eglInitialize": _eglInitialize, "___cxa_find_matching_catch_2": ___cxa_find_matching_catch_2, "___cxa_find_matching_catch_3": ___cxa_find_matching_catch_3, "_emscripten_glDeleteTextures": _emscripten_glDeleteTextures, "_emscripten_glBindRenderbuffer": _emscripten_glBindRenderbuffer, "_emscripten_asm_const_ii": _emscripten_asm_const_ii, "__Unwind_FindEnclosingFunction": __Unwind_FindEnclosingFunction, "_emscripten_glGetShaderSource": _emscripten_glGetShaderSource, "_emscripten_set_touchend_callback": _emscripten_set_touchend_callback, "_emscripten_set_focus_callback": _emscripten_set_focus_callback, "_pthread_mutexattr_destroy": _pthread_mutexattr_destroy, "_emscripten_glGetVertexAttribfv": _emscripten_glGetVertexAttribfv, "_emscripten_get_element_css_size": _emscripten_get_element_css_size, "_emscripten_request_pointerlock": _emscripten_request_pointerlock, "_emscripten_glDeleteFramebuffers": _emscripten_glDeleteFramebuffers, "_emscripten_glVertexAttrib3fv": _emscripten_glVertexAttrib3fv, "_emscripten_glUniform2fv": _emscripten_glUniform2fv, "_emscripten_glCompileShader": _emscripten_glCompileShader, "_glClear": _glClear, "_emscripten_glFrustum": _emscripten_glFrustum, "_emscripten_glSampleCoverage": _emscripten_glSampleCoverage, "_emscripten_glDepthRangef": _emscripten_glDepthRangef, "__exit": __exit, "_emscripten_glGetShaderInfoLog": _emscripten_glGetShaderInfoLog, "_emscripten_glStencilOp": _emscripten_glStencilOp, "_eglGetDisplay": _eglGetDisplay, "_emscripten_glGenerateMipmap": _emscripten_glGenerateMipmap, "_emscripten_glColorMask": _emscripten_glColorMask, "_emscripten_glLinkProgram": _emscripten_glLinkProgram, "_emscripten_glBlendEquation": _emscripten_glBlendEquation, "_usleep": _usleep, "_emscripten_glIsTexture": _emscripten_glIsTexture, "_emscripten_glVertexAttrib1fv": _emscripten_glVertexAttrib1fv, "_emscripten_glBindVertexArray": _emscripten_glBindVertexArray, "_emscripten_get_pointerlock_status": _emscripten_get_pointerlock_status, "_emscripten_glActiveTexture": _emscripten_glActiveTexture, "_emscripten_set_wheel_callback": _emscripten_set_wheel_callback, "_emscripten_glGenRenderbuffers": _emscripten_glGenRenderbuffers, "___syscall54": ___syscall54, "___unlock": ___unlock, "_emscripten_glBufferSubData": _emscripten_glBufferSubData, "_emscripten_glDepthRange": _emscripten_glDepthRange, "_eglDestroyContext": _eglDestroyContext, "_emscripten_glIsShader": _emscripten_glIsShader, "_emscripten_glGetProgramInfoLog": _emscripten_glGetProgramInfoLog, "_pthread_cond_init": _pthread_cond_init, "_pthread_mutexattr_init": _pthread_mutexattr_init, "_pthread_setspecific": _pthread_setspecific, "_emscripten_glUniform4fv": _emscripten_glUniform4fv, "_emscripten_asm_const_iiii": _emscripten_asm_const_iiii, "___cxa_throw": ___cxa_throw, "_emscripten_set_visibilitychange_callback": _emscripten_set_visibilitychange_callback, "_emscripten_glGetUniformfv": _emscripten_glGetUniformfv, "_emscripten_glCompressedTexImage2D": _emscripten_glCompressedTexImage2D, "_emscripten_glClearColor": _emscripten_glClearColor, "_emscripten_glStencilFuncSeparate": _emscripten_glStencilFuncSeparate, "_emscripten_glCreateProgram": _emscripten_glCreateProgram, "_emscripten_glGenVertexArrays": _emscripten_glGenVertexArrays, "_emscripten_glGetInfoLogARB": _emscripten_glGetInfoLogARB, "_emscripten_glDeleteRenderbuffers": _emscripten_glDeleteRenderbuffers, "_emscripten_glBindBuffer": _emscripten_glBindBuffer, "_emscripten_glGetFloatv": _emscripten_glGetFloatv, "_emscripten_glDetachShader": _emscripten_glDetachShader, "_emscripten_do_request_fullscreen": _emscripten_do_request_fullscreen, "DYNAMICTOP_PTR": DYNAMICTOP_PTR, "tempDoublePtr": tempDoublePtr, "ABORT": ABORT, "STACKTOP": STACKTOP, "STACK_MAX": STACK_MAX };
 // EMSCRIPTEN_START_ASM
 var asm =Module["asm"]// EMSCRIPTEN_END_ASM
 (Module.asmGlobalArg, Module.asmLibraryArg, buffer);
@@ -10760,10 +10987,16 @@ var real__sbrk = asm["_sbrk"]; asm["_sbrk"] = function() {
   return real__sbrk.apply(null, arguments);
 };
 
-var real__llvm_bswap_i32 = asm["_llvm_bswap_i32"]; asm["_llvm_bswap_i32"] = function() {
+var real____errno_location = asm["___errno_location"]; asm["___errno_location"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real__llvm_bswap_i32.apply(null, arguments);
+  return real____errno_location.apply(null, arguments);
+};
+
+var real__fileno = asm["_fileno"]; asm["_fileno"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__fileno.apply(null, arguments);
 };
 
 var real____rdl_oom = asm["___rdl_oom"]; asm["___rdl_oom"] = function() {
@@ -10832,10 +11065,10 @@ var real__emscripten_GetProcAddress = asm["_emscripten_GetProcAddress"]; asm["_e
   return real__emscripten_GetProcAddress.apply(null, arguments);
 };
 
-var real____errno_location = asm["___errno_location"]; asm["___errno_location"] = function() {
+var real__llvm_bswap_i32 = asm["_llvm_bswap_i32"]; asm["_llvm_bswap_i32"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____errno_location.apply(null, arguments);
+  return real__llvm_bswap_i32.apply(null, arguments);
 };
 
 var real__free = asm["_free"]; asm["_free"] = function() {
@@ -10954,10 +11187,14 @@ var _memcpy = Module["_memcpy"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_memcpy"].apply(null, arguments) };
-var _llvm_bswap_i32 = Module["_llvm_bswap_i32"] = function() {
+var ___errno_location = Module["___errno_location"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_llvm_bswap_i32"].apply(null, arguments) };
+  return Module["asm"]["___errno_location"].apply(null, arguments) };
+var _fileno = Module["_fileno"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_fileno"].apply(null, arguments) };
 var ___rdl_oom = Module["___rdl_oom"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -11002,10 +11239,10 @@ var _emscripten_GetProcAddress = Module["_emscripten_GetProcAddress"] = function
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_emscripten_GetProcAddress"].apply(null, arguments) };
-var ___errno_location = Module["___errno_location"] = function() {
+var _llvm_bswap_i32 = Module["_llvm_bswap_i32"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___errno_location"].apply(null, arguments) };
+  return Module["asm"]["_llvm_bswap_i32"].apply(null, arguments) };
 var _free = Module["_free"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');

@@ -1,9 +1,4 @@
-[target.asmjs-unknown-emscripten]
-rustflags = [
-    "-Clink-args=-s USE_SDL=2 -s ASSERTIONS=1",
-]
-
 [target.wasm32-unknown-emscripten]
 rustflags = [
-    "-Clink-args=-s USE_SDL=2 -s ASSERTIONS=1",
+    "-Clink-args=--use-preload-plugins --preload-file icon.png -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s ASSERTIONS=1",
 ]

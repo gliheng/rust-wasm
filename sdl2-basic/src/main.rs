@@ -1,17 +1,19 @@
 extern crate sdl2;
 
 use std::process;
-
+use std::path::Path;
+use sdl2::image::LoadTexture;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::rect::{Point, Rect};
 use sdl2::keyboard::Keycode;
-
+use sdl2::render::TextureCreator;
 
 #[cfg(target_os = "emscripten")]
 pub mod emscripten;
 
 fn main() {
+    // sdl2_image::init();
     let ctx = sdl2::init().unwrap();
     let video_ctx = ctx.video().unwrap();
 
@@ -34,7 +36,8 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut rect = Rect::new(10, 10, 50, 50);
+    let tc = canvas.texture_creator();
+    let texture = tc.load_texture(Path::new("icon.png")).expect("Cannot load image");
 
     let black = sdl2::pixels::Color::RGB(0, 0, 0);
     let white = sdl2::pixels::Color::RGB(255, 255, 255);
@@ -54,9 +57,10 @@ fn main() {
         canvas.set_draw_color(black);
         canvas.clear();
         canvas.set_draw_color(white);
-        canvas.fill_rect(rect);
+        canvas.fill_rect(Rect::new(10, 10, 50, 50));
         canvas.set_draw_color(Color::RGB(0, 0, 255));
         canvas.draw_line(Point::new(150, 10), Point::new(250, 110));
+        canvas.copy(&texture, None, Rect::new(70, 10, 50, 50));
         canvas.present();
     };
 
