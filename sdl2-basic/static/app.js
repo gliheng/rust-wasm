@@ -188,7 +188,7 @@ Module.expectedDataFileDownloads++;
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 172002, "filename": "/icon.png"}], "remote_package_size": 172002, "package_uuid": "9ad5d8f9-256e-477f-bb49-018a10c7276a"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "6fd2698c-586f-4944-9fef-e2779efd1a93"});
 
 })();
 
