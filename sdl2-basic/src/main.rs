@@ -1,11 +1,9 @@
 extern crate sdl2;
 
 use std::process;
-use std::io::Write;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
-use sdl2::mouse::MouseButton;
 use sdl2::rect::{Point, Rect};
 use sdl2::keyboard::Keycode;
 
@@ -48,21 +46,6 @@ fn main() {
             match event {
                 Event::Quit {..} | Event::KeyDown {keycode: Some(Keycode::Escape), ..} => {
                     process::exit(1);
-                },
-                Event::KeyDown { keycode: Some(Keycode::Left), ..} => {
-                    rect.x -= 10;
-                },
-                Event::KeyDown { keycode: Some(Keycode::Right), ..} => {
-                    rect.x += 10;
-                },
-                Event::KeyDown { keycode: Some(Keycode::Up), ..} => {
-                    rect.y -= 10;
-                },
-                Event::KeyDown { keycode: Some(Keycode::Down), ..} => {
-                    rect.y += 10;
-                },
-                Event::MouseButtonDown { mouse_btn: MouseButton::Left, x, y, .. } => {
-                    println!("left mouse down! {} {}", x, y);
                 },
                 _ => {}
             }

@@ -61,12 +61,28 @@ fn main() {
                 Event::Quit {..} | Event::KeyDown {keycode: Some(Keycode::Escape), ..} => {
                     process::exit(1);
                 },
+                Event::KeyDown { keycode: Some(Keycode::Left), ..} => {
+                    let x = box0.x() - 10;
+                    box0.set_x(x);
+                },
+                Event::KeyDown { keycode: Some(Keycode::Right), ..} => {
+                    let x = box0.x() + 10;
+                    box0.set_x(x);
+                },
+                Event::KeyDown { keycode: Some(Keycode::Up), ..} => {
+                    let y = box0.y() - 10;
+                    box0.set_y(y);
+                },
+                Event::KeyDown { keycode: Some(Keycode::Down), ..} => {
+                    let y = box0.y() + 10;
+                    box0.set_y(y);
+                },
                 Event::MouseButtonDown { mouse_btn: MouseButton::Left, x, y, .. } => {
                     mouse_down = true;
                     if box0.point_inside(x, y) {
                         drag_box = true;
-                        start_x = box0.get_x();
-                        start_y = box0.get_y();
+                        start_x = box0.x();
+                        start_y = box0.y();
                     } else {
                         drag_box = false;
                     }
@@ -118,12 +134,20 @@ impl Box {
         Box{shape: Rect::from_center(center, width, height), color: color}
     }
 
-    fn get_x(&self) -> i32 {
+    fn x(&self) -> i32 {
         self.shape.x()
     }
 
-    fn get_y(&self) -> i32 {
+    fn y(&self) -> i32 {
         self.shape.y()
+    }
+
+    fn set_x(&mut self, x: i32) {
+        self.shape.set_x(x)
+    }
+
+    fn set_y(&mut self, y: i32) {
+        self.shape.set_y(y)
     }
 
     fn render(&self, canvas: &mut Canvas<Window>) {
