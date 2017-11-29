@@ -66,16 +66,16 @@ fn main() {
     let mut events = ctx.event_pump().unwrap();
 
     let mut last_touch_id = None;
-    let mut last_click_x = 0;
-    let mut last_click_y = 0;
-    let mut start_x = 0;
-    let mut start_y = 0;
+    let mut last_click_x = 0f32;
+    let mut last_click_y = 0f32;
+    let mut start_x = 0f32;
+    let mut start_y = 0f32;
     let mut frame_rate = FrameRate::new(100);
     let mut main_loop = || {
         frame_rate.tick();
 
         box0.update();
-        box0.confine(0, 0, width as i32, height as i32);
+        box0.confine(0f32, 0f32, width as f32, height as f32);
 
         for event in events.poll_iter() {
             match event {
@@ -83,43 +83,43 @@ fn main() {
                     process::exit(1);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Left), ..} => {
-                    let x = box0.x() - 10;
+                    let x = box0.x() - 10f32;
                     box0.set_x(x);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Right), ..} => {
-                    let x = box0.x() + 10;
+                    let x = box0.x() + 10f32;
                     box0.set_x(x);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Up), ..} => {
-                    let y = box0.y() - 10;
+                    let y = box0.y() - 10f32;
                     box0.set_y(y);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Down), ..} => {
-                    let y = box0.y() + 10;
+                    let y = box0.y() + 10f32;
                     box0.set_y(y);
                 },
                 Event::MouseButtonDown { mouse_btn: MouseButton::Left, x, y, .. } => {
-                    if box0.point_inside(x, y) {
+                    if box0.point_inside(x as f32, y as f32) {
                         box0.set_drag(true);
                         start_x = box0.x();
                         start_y = box0.y();
                     } else {
                         box0.set_drag(false);
                     }
-                    last_click_x = x;
-                    last_click_y = y;
+                    last_click_x = x as f32;
+                    last_click_y = y as f32;
                 },
                 Event::MouseMotion { x, y, .. } => {
                     if box0.drag() {
-                        box0.move_to(start_x + x - last_click_x, start_y + y - last_click_y);
+                        box0.move_to(start_x + (x as f32) - last_click_x, start_y + (y as f32) - last_click_y);
                     }
                 },
                 Event::MouseButtonUp { mouse_btn: MouseButton::Left, .. } => {
                     box0.set_drag(false);
                 },
                 Event::FingerDown { x, y, touch_id, .. } => {
-                    let x = utils::convert(width, x);
-                    let y = utils::convert(height, y);
+                    let x = utils::convert(width as f32, x as f32);
+                    let y = utils::convert(height as f32, y as f32);
                     if last_touch_id.is_some() {
                         continue;
                     }
@@ -127,18 +127,20 @@ fn main() {
                     last_touch_id = Some(touch_id);
 
                     if box0.point_inside(x, y) {
+                        println!("start drag");
                         box0.set_drag(true);
                         start_x = box0.x();
                         start_y = box0.y();
                     } else {
+                        println!("no drag");
                         box0.set_drag(false);
                     }
                     last_click_x = x;
                     last_click_y = y;
                 },
                 Event::FingerMotion { x, y, .. } => {
-                    let x = utils::convert(width, x);
-                    let y = utils::convert(height, y);
+                    let x = utils::convert(width as f32, x);
+                    let y = utils::convert(height as f32, y);
 
                     if box0.drag() {
                         box0.move_to(start_x + x - last_click_x, start_y + y - last_click_y);

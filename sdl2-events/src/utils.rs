@@ -13,8 +13,8 @@ pub fn get_window_dimensiton() -> (u32, u32) {
 }
 
 /// convert FingerMotion coordinates to px
-pub fn convert(total: u32, ratio: f32) -> i32 {
-    (total as f32 * ratio) as i32
+pub fn convert(total: f32, ratio: f32) -> f32 {
+    total * ratio
 }
 
 #[cfg(not(target_os = "emscripten"))]
