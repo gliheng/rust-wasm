@@ -15,14 +15,14 @@ pub mod emscripten;
 fn main() {
     // sdl2_image::init();
     let ctx = sdl2::init().unwrap();
-    let video_ctx = ctx.video().unwrap();
+    let video = ctx.video().unwrap();
 
     // Enable anti-aliasing
-    let gl_attr = video_ctx.gl_attr();
+    let gl_attr = video.gl_attr();
     gl_attr.set_multisample_buffers(1);
     gl_attr.set_multisample_samples(4);
 
-    let window  = match video_ctx
+    let window  = match video
         .window("wasm-demo", 640, 480)
         .position_centered()
         .opengl()
