@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html>
-    <head></head>
+    <head>
+        <style>
+         html, body {
+             position: relative;
+             height: 100%;
+             overflow: hidden
+         }
+         body {
+             margin: 0;
+             padding: 0;
+         }
+        </style>
+    </head>
     <body>
         <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
         <script>
