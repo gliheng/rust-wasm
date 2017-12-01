@@ -1,0 +1,4 @@
+[target.wasm32-unknown-emscripten]
+rustflags = [
+    "-Clink-args=--use-preload-plugins -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_NET=2 -s ASSERTIONS=1"
+]

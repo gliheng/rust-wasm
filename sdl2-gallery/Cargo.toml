@@ -1,0 +1,12 @@
+[package]
+name = "sdl2-gallery"
+version = "0.1.0"
+authors = ["Amadeus <gliheng@gmail.com>"]
+
+[dependencies]
+stdweb = "0.1.3"
+
+[dependencies.sdl2]
+version = "0.30.0"
+default-features = false
+features = ["gfx"]
