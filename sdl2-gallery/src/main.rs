@@ -1,23 +1,23 @@
-extern crate sdl2;
-#[cfg(target_os = "emscripten")]
 #[macro_use]
 extern crate stdweb;
+extern crate sdl2;
 
 use std::process;
 use std::thread::sleep;
 use std::time::{Instant, Duration};
 use stdweb::web::ArrayBuffer;
+use stdweb::web::TypedArray;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::mouse::MouseButton;
 use sdl2::rect::{Rect, Point};
 use sdl2::keyboard::Keycode;
+use sdl2::rwops::RWops;
+use sdl2::image::ImageRWops;
 
-#[cfg(not(target_os = "emscripten"))]
-use sdl2::gfx::primitives::DrawRenderer;
+use sdl2::surface::Surface;
 
-#[cfg(target_os = "emscripten")]
 mod emscripten;
 mod frame_rate;
 mod utils;
@@ -27,14 +27,14 @@ use frame_rate::FrameRate;
 
 const FRAME_TIME: u32 = 1_000_000_000 / 60;
 fn main() {
-    #[cfg(target_os = "emscripten")]
     stdweb::initialize();
 
-
-    utils::fetch("http://localhost:8000", |buf: ArrayBuffer| {
-        println!("callback called {}", buf.len());
+    utils::fetch("http://localhost:8000/img/img1.jpg", |buf: TypedArray<u8>| {
+        let data = buf.to_vec();
+        println!("callback called {}", data.len());
+        let mut rw = RWops::from_bytes(data.as_slice()).unwrap();
+        Surface::load_bmp_rw(&mut rw);
     });
-
 
     let (width, height) = utils::get_window_dimensiton();
 
@@ -84,31 +84,11 @@ fn main() {
         canvas.set_draw_color(black);
         canvas.clear();
 
-        #[cfg(not(target_os = "emscripten"))]
-        let _ = canvas.string(10, 10, frame_rate.mean().to_string().as_str(), green);
+        // let _ = canvas.string(10, 10, frame_rate.mean().to_string().as_str(), green);
 
         canvas.present();
     };
 
-    #[cfg(target_os = "emscripten")]
     use emscripten::{emscripten};
-
-    #[cfg(target_os = "emscripten")]
     emscripten::set_main_loop_callback(main_loop);
-
-    #[cfg(not(target_os = "emscripten"))]
-    {
-        let frame_time = Duration::new(0, FRAME_TIME);
-        loop {
-            let frame_start = Instant::now();
-
-            main_loop();
-
-            let draw_time = Instant::now().duration_since(frame_start);
-            if frame_time > draw_time {
-                // framerate control
-                sleep(frame_time - draw_time);
-            }
-        }
-    }
 }

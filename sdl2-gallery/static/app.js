@@ -1997,10 +1997,9 @@ integrateWasmJS(Module);
 var ASM_CONSTS = [function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); },
  function($0) { Module.STDWEB.increment_refcount( $0 ); },
  function($0) { Module.STDWEB.decrement_refcount( $0 ); },
- function($0) { return (Module.STDWEB.acquire_js_reference( $0 ) instanceof ArrayBuffer) | 0; },
  function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientWidth ;})()); },
  function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientHeight ;})()); },
- function($0, $1, $2, $3) { Module.STDWEB.from_js($0, (function(){console.log ("fetching: " , Module.STDWEB.to_js($1)); var cbk = Module.STDWEB.to_js($2); fetch (Module.STDWEB.to_js($3)). then (rsp => rsp.arrayBuffer ()). then (arg => {console.log (arg); return arg ;}). then (cbk);})()); },
+ function($0, $1, $2) { Module.STDWEB.from_js($0, (function(){var cbk = Module.STDWEB.to_js($1); fetch (Module.STDWEB.to_js($2)). then (rsp => rsp.arrayBuffer ()). then (ab => new Uint8Array (ab)). then (cbk);})()); },
  function() { Module.STDWEB = {}; Module.STDWEB.to_js = function to_js (address){var kind = HEAPU8 [address + 12]; if (kind ===0){return undefined ;}else if (kind ===1){return null ;}else if (kind ===2){return HEAP32 [address / 4];}else if (kind ===3){return HEAPF64 [address / 8];}else if (kind ===4){var pointer = HEAPU32 [address / 4]; var length = HEAPU32 [(address + 4)/ 4]; return Module.STDWEB.to_js_string (pointer , length);}else if (kind ===5){return false ;}else if (kind ===6){return true ;}else if (kind ===7){var pointer = HEAPU32 [address / 4]; var length = HEAPU32 [(address + 4)/ 4]; var output = []; for (var i = 0 ; i < length ; ++i){output.push (Module.STDWEB.to_js (pointer + i * 16));}return output ;}else if (kind ===8){var value_array_pointer = HEAPU32 [address / 4]; var length = HEAPU32 [(address + 4)/ 4]; var key_array_pointer = HEAPU32 [(address + 8)/ 4]; var output = {}; for (var i = 0 ; i < length ; ++i){var key_pointer = HEAPU32 [(key_array_pointer + i * 8)/ 4]; var key_length = HEAPU32 [(key_array_pointer + 4 + i * 8)/ 4]; var key = Module.STDWEB.to_js_string (key_pointer , key_length); var value = Module.STDWEB.to_js (value_array_pointer + i * 16); output [key]= value ;}return output ;}else if (kind ===9){return Module.STDWEB.acquire_js_reference (HEAP32 [address / 4]);}else if (kind ===10){var adapter_pointer = HEAPU32 [address / 4]; var pointer = HEAPU32 [(address + 4)/ 4]; var deallocator_pointer = HEAPU32 [(address + 8)/ 4]; var output = function (){var args = _malloc (16); Module.STDWEB.from_js (args , arguments); Runtime.dynCall ("vii" , adapter_pointer , [pointer , args]); var result = Module.STDWEB.tmp ; Module.STDWEB.tmp = null ; return result ;}; output.drop = function (){output.drop = null ; Runtime.dynCall ("vi" , deallocator_pointer , [pointer]);}; return output ;}}; },
  function() { Module.STDWEB.from_js = function from_js (address , value){var kind = Object.prototype.toString.call (value); if (kind ==="[object String]"){var length = lengthBytesUTF8 (value); var pointer = _malloc (length + 1); stringToUTF8 (value , pointer , length + 1); HEAPU8 [address + 12]= 4 ; HEAPU32 [address / 4]= pointer ; HEAPU32 [(address + 4)/ 4]= length ;}else if (kind ==="[object Number]"){if (value ===(value | 0)){HEAPU8 [address + 12]= 2 ; HEAP32 [address / 4]= value ;}else {HEAPU8 [address + 12]= 3 ; HEAPF64 [address / 8]= value ;}}else if (value ===null){HEAPU8 [address + 12]= 1 ;}else if (value ===undefined){HEAPU8 [address + 12]= 0 ;}else if (value ===false){HEAPU8 [address + 12]= 5 ;}else if (value ===true){HEAPU8 [address + 12]= 6 ;}else if (kind ==="[object Array]" || kind ==="[object Arguments]"){var length = value.length ; var pointer = _malloc (length * 16); HEAPU8 [address + 12]= 7 ; HEAPU32 [address / 4]= pointer ; HEAPU32 [(address + 4)/ 4]= length ; for (var i = 0 ; i < length ; ++i){Module.STDWEB.from_js (pointer + i * 16 , value [i]);}}else if (kind ==="[object Object]"){var keys = Object.keys (value); var length = keys.length ; var key_array_pointer = _malloc (length * 8); var value_array_pointer = _malloc (length * 16); HEAPU8 [address + 12]= 8 ; HEAPU32 [address / 4]= value_array_pointer ; HEAPU32 [(address + 4)/ 4]= length ; HEAPU32 [(address + 8)/ 4]= key_array_pointer ; for (var i = 0 ; i < length ; ++i){var key = keys [i]; var key_length = lengthBytesUTF8 (key); var key_pointer = _malloc (key_length + 1); stringToUTF8 (key , key_pointer , key_length + 1); var key_address = key_array_pointer + i * 8 ; HEAPU32 [key_address / 4]= key_pointer ; HEAPU32 [(key_address + 4)/ 4]= key_length ; Module.STDWEB.from_js (value_array_pointer + i * 16 , value [key]);}}else {var refid = Module.STDWEB.acquire_rust_reference (value); HEAPU8 [address + 12]= 9 ; HEAP32 [address / 4]= refid ;}}; },
  function() { Module.STDWEB.to_js_string = function to_js_string (index , length){index = index | 0 ; length = length | 0 ; var end = (index | 0)+ (length | 0); var output = "" ; while (index < end){var x = HEAPU8 [index ++]; if (x < 128){output += String.fromCharCode (x); continue ;}var init = (x & (0x7F >> 2)); var y = 0 ; if (index < end){y = HEAPU8 [index ++];}var ch = (init << 6)| (y & 63); if (x >= 0xE0){var z = 0 ; if (index < end){z = HEAPU8 [index ++];}var y_z = ((y & 63)<< 6)| (z & 63); ch = init << 12 | y_z ; if (x >= 0xF0){var w = 0 ; if (index < end){w = HEAPU8 [index ++];}ch = (init & 7)<< 18 | ((y_z << 6)| (w & 63));}}output += String.fromCharCode (ch); continue ;}return output ;}; },
@@ -2008,7 +2007,9 @@ var ASM_CONSTS = [function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); 
  function() { console.error( 'Encountered a panic!' ); },
  function($0, $1) { console.error( 'Panic error message:', Module.STDWEB.to_js_string( $0, $1 ) ); },
  function($0, $1, $2) { console.error( 'Panic location:', Module.STDWEB.to_js_string( $0, $1 ) + ':' + $2 ); },
- function($0, $1) { Module.STDWEB.from_js($0, (function(){return Module.STDWEB.to_js($1). byteLength ;})()); },
+ function($0) { return (Module.STDWEB.acquire_js_reference( $0 ) instanceof Uint8Array) | 0; },
+ function($0, $1) { var array = Module.STDWEB.to_js($0); var pointer = Module.STDWEB.to_js($1); HEAPU8.set (array , pointer); },
+ function($0, $1) { Module.STDWEB.from_js($0, (function(){return Module.STDWEB.to_js($1). length ;})()); },
  function() { return screen.width; },
  function() { return screen.height; },
  function($0) { if (typeof Module['setWindowTitle'] !== 'undefined') { Module['setWindowTitle'](Module['Pointer_stringify']($0)); } return 0; },
@@ -2027,12 +2028,12 @@ var ASM_CONSTS = [function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); 
  function($0, $1) { var numChannels = SDL2.audio.currentOutputBuffer['numberOfChannels']; for (var c = 0; c < numChannels; ++c) { var channelData = SDL2.audio.currentOutputBuffer['getChannelData'](c); if (channelData.length != $1) { throw 'Web Audio output buffer length mismatch! Destination size: ' + channelData.length + ' samples vs expected ' + $1 + ' samples!'; } for (var j = 0; j < $1; ++j) { channelData[j] = HEAPF32[$0 + ((j*numChannels + c) << 2) >> 2]; } } },
  function($0, $1) { Module.printErr('bad name in getProcAddress: ' + [Pointer_stringify($0), Pointer_stringify($1)]) }];
 
-function _emscripten_asm_const_ii(code, a0) {
-  return ASM_CONSTS[code](a0);
-}
-
 function _emscripten_asm_const_i(code) {
   return ASM_CONSTS[code]();
+}
+
+function _emscripten_asm_const_ii(code, a0) {
+  return ASM_CONSTS[code](a0);
 }
 
 function _emscripten_asm_const_iiii(code, a0, a1, a2) {
@@ -2051,7 +2052,7 @@ function _emscripten_asm_const_iii(code, a0, a1) {
 
 STATIC_BASE = Runtime.GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 76928;
+STATICTOP = STATIC_BASE + 77264;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -2060,7 +2061,7 @@ memoryInitializer = Module["wasmJSMethod"].indexOf("asmjs") >= 0 || Module["wasm
 
 
 
-var STATIC_BUMP = 76928;
+var STATIC_BUMP = 77264;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -10322,9 +10323,9 @@ function nullFunc_viif(x) { Module["printErr"]("Invalid function pointer called 
 
 function nullFunc_viiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-Module['wasmTableSize'] = 71680;
+Module['wasmTableSize'] = 72704;
 
-Module['wasmMaxTableSize'] = 71680;
+Module['wasmMaxTableSize'] = 72704;
 
 function invoke_iiiiiiii(index,a1,a2,a3,a4,a5,a6,a7) {
   try {

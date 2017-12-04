@@ -1,7 +1,7 @@
-#[cfg(target_os = "emscripten")]
 use stdweb::unstable::TryInto;
+use stdweb::web::ArrayBuffer;
+use stdweb::web::TypedArray;
 
-#[cfg(target_os = "emscripten")]
 pub fn get_window_dimensiton() -> (u32, u32) {
     let w = js! {
         return document.body.clientWidth;
@@ -17,17 +17,13 @@ pub fn convert(total: f32, ratio: f32) -> f32 {
     total * ratio
 }
 
-#[cfg(not(target_os = "emscripten"))]
-pub fn get_window_dimensiton() -> (u32, u32) {
-    (640, 500)
-}
-
-fn fetch<F> (url: &str, cbk: F)
-    where F: FnMut(ArrayBuffer) + 'static {
+pub fn fetch<F> (url: &str, cbk: F)
+    where F: FnMut(TypedArray<u8>) + 'static {
     js! {
         var cbk = @{cbk};
         fetch(@{url})
             .then(rsp => rsp.arrayBuffer())
+            .then(ab => new Uint8Array(ab))
             .then(cbk);
     };
 }
