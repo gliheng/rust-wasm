@@ -8,6 +8,7 @@ use sdl2::event::Event;
 use sdl2::rect::{Point, Rect};
 use sdl2::keyboard::Keycode;
 use sdl2::render::TextureCreator;
+use sdl2::gfx::primitives::DrawRenderer;
 
 #[cfg(target_os = "emscripten")]
 pub mod emscripten;
@@ -39,8 +40,13 @@ fn main() {
     let tc = canvas.texture_creator();
     let texture = tc.load_texture(Path::new("icon.png")).expect("Cannot load image");
 
-    let black = sdl2::pixels::Color::RGB(0, 0, 0);
-    let white = sdl2::pixels::Color::RGB(255, 255, 255);
+    let black = Color::RGB(0, 0, 0);
+    let white = Color::RGB(255, 255, 255);
+    let green = Color::RGB(0, 255, 0);
+    let yellow = Color::RGB(255, 255, 0);
+    let red = Color::RGB(255, 0, 0);
+    let cyon = Color::RGB(0, 255, 255);
+    let purple = Color::RGB(255, 0, 255);
 
     let mut events = ctx.event_pump().unwrap();
 
@@ -59,8 +65,16 @@ fn main() {
         canvas.set_draw_color(white);
         canvas.fill_rect(Rect::new(10, 10, 50, 50));
         canvas.set_draw_color(Color::RGB(0, 0, 255));
-        canvas.draw_line(Point::new(150, 10), Point::new(250, 110));
-        canvas.copy(&texture, None, Rect::new(70, 10, 50, 50));
+        let _ = canvas.string(300, 200, "hello", green);
+        let _ = canvas.rounded_rectangle(10, 10, 200, 200, 10, green);
+        let _ = canvas.aa_ellipse(400, 400, 100, 40, green);
+        let _ = canvas.thick_line(300, 300, 400, 400, 5, yellow);
+        let _ = canvas.aa_polygon(&[20, 40, 60, 80, 100, 120, 3],
+                                  &[100, 200, 100, 200, 100, 300, 300],
+                                  yellow);
+        let _ = canvas.hline(400, 600, 150, cyon);
+        let _ = canvas.aa_line(150, 10, 250, 110, red);
+        let _ = canvas.copy(&texture, None, Rect::new(70, 10, 50, 50));
         canvas.present();
     };
 
