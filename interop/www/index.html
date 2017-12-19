@@ -12,10 +12,12 @@
              let rust_pow = Module.cwrap('rust_pow', 'number', ['number', 'number']);
              console.log(rust_pow(2, 3));
 
+             let draw = Module.cwrap('draw', null, ['string']);
+             draw("#canvas");
+
              Module.ccall('hello', 'null', []);
          }
         </script>
         <script src="app.js"></script>
     </body>
 </html>
-
