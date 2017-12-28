@@ -24,6 +24,9 @@ pub fn fetch<F> (url: &str, cbk: F)
         fetch(@{url})
             .then(rsp => rsp.arrayBuffer())
             .then(ab => new Uint8Array(ab))
-            .then(cbk);
+            .then(function (buf) {
+                cbk(buf);
+                cbk.drop();
+            });
     };
 }

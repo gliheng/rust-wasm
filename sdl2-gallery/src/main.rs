@@ -2,46 +2,36 @@
 extern crate stdweb;
 extern crate sdl2;
 
+mod emscripten;
+mod frame_rate;
+mod utils;
+mod display;
+
 use std::process;
 use std::thread::sleep;
 use std::time::{Instant, Duration};
-use stdweb::web::ArrayBuffer;
-use stdweb::web::TypedArray;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::mouse::MouseButton;
 use sdl2::rect::{Rect, Point};
 use sdl2::keyboard::Keycode;
-use sdl2::rwops::RWops;
-use sdl2::image::ImageRWops;
+use sdl2::render::RenderTarget;
 
-use sdl2::surface::Surface;
-
-mod emscripten;
-mod frame_rate;
-mod utils;
-
+use display::{Display, Image, Scene};
 use frame_rate::FrameRate;
-
 
 const FRAME_TIME: u32 = 1_000_000_000 / 60;
 fn main() {
+    use emscripten::{emscripten};
+
     stdweb::initialize();
 
-    utils::fetch("http://localhost:8000/img/img1.jpg", |buf: TypedArray<u8>| {
-        let data = buf.to_vec();
-        println!("callback called {}", data.len());
-        let mut rw = RWops::from_bytes(data.as_slice()).unwrap();
-        Surface::load_bmp_rw(&mut rw);
-    });
-
-    let (width, height) = utils::get_window_dimensiton();
-
     let ctx = sdl2::init().unwrap();
+    let (width, height) = utils::get_window_dimensiton();
     let video = ctx.video().unwrap();
-    // TODO set dpi
-    // println!("dpi {:?}", video.display_dpi(0));
 
     // Enable anti-aliasing
     let gl_attr = video.gl_attr();
@@ -62,11 +52,14 @@ fn main() {
         .build()
         .unwrap();
 
+    let tc = canvas.texture_creator();
     let white = Color::RGB(255, 255, 255);
     let black = Color::RGB(0, 0, 0);
     let green = Color::RGB(0, 255, 0);
 
     let mut events = ctx.event_pump().unwrap();
+    let mut scene = Scene::new(canvas.texture_creator());
+    scene.add(Image::new("http://localhost:8000/img/img1.jpg".to_string()));
 
     let mut frame_rate = FrameRate::new(100);
     let mut main_loop = || {
@@ -80,15 +73,11 @@ fn main() {
                 _ => {}
             }
         }
-
         canvas.set_draw_color(black);
         canvas.clear();
-
-        // let _ = canvas.string(10, 10, frame_rate.mean().to_string().as_str(), green);
-
+        scene.render(&mut canvas);
         canvas.present();
     };
 
-    use emscripten::{emscripten};
     emscripten::set_main_loop_callback(main_loop);
 }
