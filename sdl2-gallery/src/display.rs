@@ -9,7 +9,6 @@ use sdl2::render::{TextureCreator};
 use stdweb::web::TypedArray;
 use sdl2::surface::Surface;
 use sdl2::render::Texture;
-use std::rc::Rc;
 use std::collections::HashMap;
 use utils;
 
@@ -20,7 +19,7 @@ static mut LOAD_ID: u32 = 0;
 thread_local!(static LOAD_REGISTER: RefCell<HashMap<u32, Box<Fn(String)>>> = RefCell::new(HashMap::new()));
 
 pub struct Scene {
-    children: Vec<Rc<Image>>,
+    children: Vec<Image>,
 }
 
 impl Scene {
@@ -32,7 +31,7 @@ impl Scene {
             children: vec![],
         }
     }
-    pub fn add(&mut self, img: Rc<Image>) {
+    pub fn add(&mut self, img: Image) {
         self.children.push(img);
     }
     pub fn render(&self, canvas: &mut Canvas<Window>) {
@@ -54,14 +53,14 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(src: String) -> Rc<Image> {
-        let inst = Rc::new(Image {
+    pub fn new(src: String) -> Image {
+        let mut inst = Image {
             dirty: false,
             src,
-        });
+        };
 
-        let rc1 = inst.clone();
-        utils::fetch(&inst.src, |buf: TypedArray<u8>| {
+        let p: *mut Image = &mut inst;
+        utils::fetch(&inst.src, move |buf: TypedArray<u8>| {
             use emscripten::{emscripten};
             let v = buf.to_vec();
             unsafe {
@@ -69,9 +68,9 @@ impl Image {
                 LOAD_ID += 1;
 
                 LOAD_REGISTER.with(|m| {
-                    m.borrow_mut().insert(id, Box::new(|filename| {
-                        println!("file {} loaded", filename);
-                        //rc1.loaded(filename);
+                    m.borrow_mut().insert(id, Box::new(move |filename| {
+                        let img = &*p;
+                        img.loaded(filename);
                     }));
                 });
                 emscripten::emscripten_run_preload_plugins_data(

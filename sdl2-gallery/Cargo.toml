@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Amadeus <gliheng@gmail.com>"]
 
 [dependencies]
-stdweb = "0.1.3"
+stdweb = "0.3.0"
 
 [dependencies.sdl2]
 version = "0.30.0"

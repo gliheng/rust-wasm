@@ -1,6 +1,7 @@
 use stdweb::unstable::TryInto;
 use stdweb::web::ArrayBuffer;
 use stdweb::web::TypedArray;
+use stdweb::Once;
 
 pub fn get_window_dimensiton() -> (u32, u32) {
     let w = js! {
@@ -18,15 +19,14 @@ pub fn convert(total: f32, ratio: f32) -> f32 {
 }
 
 pub fn fetch<F> (url: &str, cbk: F)
-    where F: FnMut(TypedArray<u8>) + 'static {
+    where F: FnOnce(TypedArray<u8>) + 'static {
     js! {
-        var cbk = @{cbk};
+        var cbk = @{Once(cbk)};
         fetch(@{url})
             .then(rsp => rsp.arrayBuffer())
             .then(ab => new Uint8Array(ab))
             .then(function (buf) {
                 cbk(buf);
-                cbk.drop();
             });
     };
 }
