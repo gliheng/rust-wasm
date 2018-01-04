@@ -188,7 +188,7 @@ Module.expectedDataFileDownloads++;
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "6a0f6a55-9c7c-488a-a849-16ad7a81b559"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "d5046db3-f013-4f97-ab02-0f577fae62a0"});
 
 })();
 
@@ -2188,12 +2188,12 @@ integrateWasmJS(Module);
 
 // === Body ===
 
-var ASM_CONSTS = [function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); },
+var ASM_CONSTS = [function($0) { Module.STDWEB.increment_refcount( $0 ); },
+ function($0) { Module.STDWEB.decrement_refcount( $0 ); },
  function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientWidth ;})()); },
  function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientHeight ;})()); },
  function($0, $1, $2) { $1 = Module.STDWEB.to_js($1);$2 = Module.STDWEB.to_js($2);Module.STDWEB.from_js($0, (function(){var cbk = ($1); fetch (($2)). then (rsp => rsp.arrayBuffer ()). then (ab => new Uint8Array (ab)). then (function (buf){cbk (buf);});})()); },
- function($0) { Module.STDWEB.increment_refcount( $0 ); },
- function($0) { Module.STDWEB.decrement_refcount( $0 ); },
+ function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); },
  function() { Module.STDWEB = {}; },
  function() { Module.STDWEB.alloc = _malloc ; Module.STDWEB.dyncall = Runtime.dynCall ; Module.STDWEB.utf8_len = lengthBytesUTF8 ; },
  function() { Module.STDWEB.to_utf8 = function to_utf8 (str , addr){for (var i = 0 ; i < str.length ; ++i){var u = str.charCodeAt (i); if (u >= 0xD800 && u <= 0xDFFF){u = 0x10000 + ((u & 0x3FF)<< 10)| (str.charCodeAt (++i)& 0x3FF);}if (u <= 0x7F){HEAPU8 [addr ++]= u ;}else if (u <= 0x7FF){HEAPU8 [addr ++]= 0xC0 | (u >> 6); HEAPU8 [addr ++]= 0x80 | (u & 63);}else if (u <= 0xFFFF){HEAPU8 [addr ++]= 0xE0 | (u >> 12); HEAPU8 [addr ++]= 0x80 | ((u >> 6)& 63); HEAPU8 [addr ++]= 0x80 | (u & 63);}else if (u <= 0x1FFFFF){HEAPU8 [addr ++]= 0xF0 | (u >> 18); HEAPU8 [addr ++]= 0x80 | ((u >> 12)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 6)& 63); HEAPU8 [addr ++]= 0x80 | (u & 63);}else if (u <= 0x3FFFFFF){HEAPU8 [addr ++]= 0xF8 | (u >> 24); HEAPU8 [addr ++]= 0x80 | ((u >> 18)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 12)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 6)& 63); HEAPU8 [addr ++]= 0x80 | (u & 63);}else {HEAPU8 [addr ++]= 0xFC | (u >> 30); HEAPU8 [addr ++]= 0x80 | ((u >> 24)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 18)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 12)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 6)& 63); HEAPU8 [addr ++]= 0x80 | (u & 63);}}}; },
@@ -2249,7 +2249,7 @@ function _emscripten_asm_const_iiiii(code, a0, a1, a2, a3) {
 
 STATIC_BASE = Runtime.GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 152816;
+STATICTOP = STATIC_BASE + 153296;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -2258,7 +2258,7 @@ memoryInitializer = Module["wasmJSMethod"].indexOf("asmjs") >= 0 || Module["wasm
 
 
 
-var STATIC_BUMP = 152816;
+var STATIC_BUMP = 153296;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 

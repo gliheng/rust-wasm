@@ -1,5 +1,4 @@
 use stdweb::unstable::TryInto;
-use stdweb::web::ArrayBuffer;
 use stdweb::web::TypedArray;
 use stdweb::Once;
 

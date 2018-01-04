@@ -8,19 +8,10 @@ mod utils;
 mod display;
 
 use std::process;
-use std::thread::sleep;
-use std::time::{Instant, Duration};
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use sdl2::pixels::Color;
 use sdl2::event::Event;
-use sdl2::mouse::MouseButton;
-use sdl2::rect::{Rect, Point};
 use sdl2::keyboard::Keycode;
-use sdl2::render::RenderTarget;
-
-use display::{Display, Image, Scene};
+use display::{Image, Scene};
 use frame_rate::FrameRate;
 
 const FRAME_TIME: u32 = 1_000_000_000 / 60;
@@ -52,17 +43,17 @@ fn main() {
         .build()
         .unwrap();
 
-    let tc = canvas.texture_creator();
-    let white = Color::RGB(255, 255, 255);
     let black = Color::RGB(0, 0, 0);
-    let green = Color::RGB(0, 255, 0);
 
     let mut events = ctx.event_pump().unwrap();
     let mut scene = Scene::new(canvas.texture_creator());
-    scene.add(Image::new("http://localhost:8000/img/img1.jpg".to_string()));
+    scene.add(Image::new_with_dimension("img/img1.jpg".to_string(), 0, 0, 200, 200));
+    scene.add(Image::new_with_dimension("img/img2.jpg".to_string(), 200, 0, 200, 200));
+    scene.add(Image::new_with_dimension("img/img3.jpg".to_string(), 0, 200, 200, 200));
+    scene.add(Image::new_with_dimension("img/img4.jpg".to_string(), 200, 200, 200, 200));
 
     let mut frame_rate = FrameRate::new(100);
-    let mut main_loop = || {
+    let main_loop = || {
         frame_rate.tick();
 
         for event in events.poll_iter() {

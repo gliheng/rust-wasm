@@ -7,6 +7,6 @@ authors = ["Amadeus <gliheng@gmail.com>"]
 stdweb = "0.3.0"
 
 [dependencies.sdl2]
-version = "0.30.0"
+version = "0.31.0"
 default-features = false
-features = ["image"]
+features = ["image", "unsafe_textures"]
