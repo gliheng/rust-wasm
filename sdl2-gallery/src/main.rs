@@ -11,10 +11,10 @@ use std::process;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::gfx::primitives::DrawRenderer;
 use display::{Image, Scene};
 use frame_rate::FrameRate;
 
-const FRAME_TIME: u32 = 1_000_000_000 / 60;
 fn main() {
     use emscripten::{emscripten};
 
@@ -44,6 +44,7 @@ fn main() {
         .unwrap();
 
     let black = Color::RGB(0, 0, 0);
+    let green = Color::RGB(0, 255, 0);
 
     let mut events = ctx.event_pump().unwrap();
     let mut scene = Scene::new(canvas.texture_creator());
@@ -52,7 +53,7 @@ fn main() {
     scene.add(Image::new_with_dimension("img/img3.jpg".to_string(), 0, 200, 200, 200));
     scene.add(Image::new_with_dimension("img/img4.jpg".to_string(), 200, 200, 200, 200));
 
-    let mut frame_rate = FrameRate::new(100);
+    let mut frame_rate = FrameRate::new();
     let main_loop = || {
         frame_rate.tick();
 
@@ -67,6 +68,7 @@ fn main() {
         canvas.set_draw_color(black);
         canvas.clear();
         scene.render(&mut canvas);
+        let _ = canvas.string(10, 10, &frame_rate.mean().to_string(), green);
         canvas.present();
     };
 

@@ -9,4 +9,4 @@ stdweb = "0.3.0"
 [dependencies.sdl2]
 version = "0.31.0"
 default-features = false
-features = ["image", "unsafe_textures"]
+features = ["gfx", "image", "unsafe_textures"]

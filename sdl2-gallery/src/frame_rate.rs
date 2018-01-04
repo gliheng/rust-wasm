@@ -33,9 +33,9 @@ pub struct FrameRate {
 }
 
 impl FrameRate {
-    pub fn new(n: u8) -> Self {
+    pub fn new() -> Self {
         FrameRate {
-            times: VecDeque::with_capacity(n as usize),
+            times: VecDeque::with_capacity(100),
             mean: Mean::new(10usize)
         }
     }
