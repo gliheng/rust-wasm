@@ -51,11 +51,13 @@ impl FrameRate {
         }
     }
 
+    /// Get the average framerate over the previous samples
     pub fn mean(&mut self) -> u8 {
         self.mean.push(self.times.len() as u8);
         self.mean.get() as u8
     }
 
+    /// Get the current framerate
     pub fn get(&self) -> u8 {
         self.times.len() as u8
     }

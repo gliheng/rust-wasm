@@ -99,7 +99,6 @@ impl Default for Image {
 }
 
 pub fn load_img(src: &str) {
-    println!("loading! {:?}", src);
     let bsrc = Box::into_raw(Box::new(src.to_string()));
     let ext = (match src.rfind('.') {
         Some(i) => &src[i+1..],
@@ -125,7 +124,6 @@ extern "C" fn loaded(src: *const c_void, file: *mut c_char) {
         LOAD_REGISTER.with(|m| {
             let src = Box::from_raw(src as *mut String);
             let file = CString::from_raw(file).into_string().unwrap();
-            println!("loaded: {} {}", src, file);
 
             if let Ok(surf) = Surface::from_file(file) {
                 if let Some(ref tc) = TEXTURE_CREATOR {
@@ -133,7 +131,6 @@ extern "C" fn loaded(src: *const c_void, file: *mut c_char) {
                     let h = surf.height();
                     let tex = tc.create_texture_from_surface(surf).expect("failed to create texture fron surface");
                     m.borrow_mut().insert(*src, (w, h, tex));
-                    println!("set tex!");
                 } else {
                     println!("load err");
                 }

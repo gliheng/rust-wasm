@@ -1,24 +1,36 @@
 #[macro_use]
 extern crate stdweb;
 extern crate sdl2;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 mod emscripten;
 mod frame_rate;
 mod utils;
 mod display;
+mod model;
 
 use std::process;
+use stdweb::unstable::TryInto;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::gfx::primitives::DrawRenderer;
+use model::Gallery;
 use display::{Image, Scene};
 use frame_rate::FrameRate;
 
+
 fn main() {
     use emscripten::{emscripten};
-
     stdweb::initialize();
+
+    let gallery = js! {
+        return Module.gallery;
+    };
+    let gallery: Gallery = gallery.try_into().unwrap();
+    println!("{:?}", gallery);
 
     let ctx = sdl2::init().unwrap();
     let (width, height) = utils::get_window_dimensiton();
@@ -48,10 +60,10 @@ fn main() {
 
     let mut events = ctx.event_pump().unwrap();
     let mut scene = Scene::new(canvas.texture_creator());
-    scene.add(Image::new_with_dimension("img/img1.jpg".to_string(), 0, 0, 200, 200));
-    scene.add(Image::new_with_dimension("img/img2.jpg".to_string(), 200, 0, 200, 200));
-    scene.add(Image::new_with_dimension("img/img3.jpg".to_string(), 0, 200, 200, 200));
-    scene.add(Image::new_with_dimension("img/img4.jpg".to_string(), 200, 200, 200, 200));
+
+    for (i, ref url) in gallery.urls.iter().enumerate() {
+        scene.add(Image::new_with_dimension(url.to_string(), 200 * i as i32, 0, 200, 200));
+    }
 
     let mut frame_rate = FrameRate::new();
     let main_loop = || {
@@ -68,7 +80,7 @@ fn main() {
         canvas.set_draw_color(black);
         canvas.clear();
         scene.render(&mut canvas);
-        let _ = canvas.string(10, 10, &frame_rate.mean().to_string(), green);
+        let _ = canvas.string(10, 10, &frame_rate.get().to_string(), green);
         canvas.present();
     };
 
