@@ -2,17 +2,15 @@
 #[cfg(target_os = "emscripten")]
 pub mod emscripten {
     #![allow(dead_code)]
+    #![allow(non_camel_case_types)]
+
     use std::cell::RefCell;
     use std::ptr::null_mut;
     use std::os::raw::{c_void, c_int, c_float, c_char};
 
-    #[allow(non_camel_case_types)]
     type em_callback_func = extern "C" fn();
-    #[allow(non_camel_case_types)]
     type em_str_callback_func = extern "C" fn(*const c_char);
-    #[allow(non_camel_case_types)]
     type em_arg_callback_func = extern "C" fn(*const c_void);
-    #[allow(non_camel_case_types)]
     type em_run_preload_plugins_data_onload_func = extern "C" fn(*const c_void, *mut c_char);
 
     extern "C" {
