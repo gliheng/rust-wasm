@@ -1,0 +1,6 @@
+[package]
+name = "wasm-demo"
+version = "0.1.0"
+authors = ["Amadeus <gliheng@gmail.com>"]
+
+[dependencies]
