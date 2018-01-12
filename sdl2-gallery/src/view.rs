@@ -4,6 +4,7 @@ use display::Display;
 use sdl2::video::{Window, WindowContext};
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::rect::Rect;
+use sdl2::event::Event;
 
 pub struct GalleryView {
     curr: ScrollView,
@@ -35,6 +36,19 @@ impl Display for GalleryView {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         self.curr.render(canvas, rect.clone());
         self.next.render(canvas, rect.clone());
+    }
+    fn handle_events(&mut self, event: &Event) {
+        match event {
+            &Event::FingerDown { x, y, touch_id, .. } => {
+                println!("down");
+            },
+            &Event::FingerMotion { x, y, .. } => {
+            },
+            &Event::FingerUp {touch_id, .. } => {
+                println!("up");
+            },
+            _ => (),
+        }
     }
 }
 

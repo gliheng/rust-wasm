@@ -26,6 +26,7 @@ unsafe impl Send for SizedTexture {}
 pub trait Display {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect);
     // fn render(&self, canvas: &mut Canvas<Window>, x: i32, y: i32, w: u32, h: u32);
+    fn handle_events(&mut self, event: &Event) {}
 }
 
 pub struct Scene {
