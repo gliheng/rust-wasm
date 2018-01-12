@@ -16,7 +16,7 @@ static mut TEXTURE_CREATOR: Option<TextureCreator<WindowContext>> = None;
 thread_local!(static LOAD_REGISTER: RefCell<HashMap<String, (u32, u32, Texture)>> = RefCell::new(HashMap::new()));
 
 pub struct Scene {
-    children: Vec<Image>,
+    children: Vec<Box<Display>>,
 }
 
 impl Scene {
@@ -28,27 +28,24 @@ impl Scene {
             children: vec![],
         }
     }
-    pub fn add(&mut self, img: Image) {
-        self.children.push(img);
+    pub fn add(&mut self, ui: Box<Display>) {
+        self.children.push(ui);
     }
-    pub fn render(&self, canvas: &mut Canvas<Window>) {
+    pub fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         for c in &self.children {
-            c.render(canvas);
+            c.render(canvas, rect.clone());
         }
     }
 }
 
-pub struct Display {
-}
-
-impl Display {
+pub trait Display {
+    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect);
+    // fn render(&self, canvas: &mut Canvas<Window>, x: i32, y: i32, w: u32, h: u32);
 }
 
 pub struct Image {
     dirty: bool,
     src: String,
-    x: i32,
-    y: i32,
     w: u32,
     h: u32,
 }
@@ -62,23 +59,24 @@ impl Image {
             ..Default::default()
         }
     }
-    pub fn new_with_dimension(src: String, x: i32, y: i32, w: u32, h: u32) -> Image {
+    pub fn new_with_dimension(src: String, w: u32, h: u32) -> Image {
         load_img(&src);
         Image {
             dirty: false,
             src,
-            x,
-            y,
             w,
             h,
         }
     }
-    pub fn render(&self, canvas: &mut Canvas<Window>) {
+}
+
+impl Display for Image {
+    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         LOAD_REGISTER.with(|m| {
             if let Some(&(w, h, ref tex)) = m.borrow().get(&self.src) {
                 let _ = canvas.copy(tex,
                                     Rect::new(0, 0, w, h),
-                                    Rect::new(self.x, self.y, self.w, self.h));
+                                    rect);
             }
         });
     }
@@ -90,8 +88,6 @@ impl Default for Image {
         Self {
             dirty: false,
             src: "".to_string(),
-            x: 0,
-            y: 0,
             w: 0,
             h: 0,
         }

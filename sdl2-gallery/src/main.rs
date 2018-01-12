@@ -10,6 +10,7 @@ mod frame_rate;
 mod utils;
 mod display;
 mod model;
+mod view;
 
 use std::process;
 use stdweb::unstable::TryInto;
@@ -17,8 +18,10 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::gfx::primitives::DrawRenderer;
+use sdl2::rect::Rect;
 use model::Gallery;
-use display::{Image, Scene};
+use view::GalleryView;
+use display::{Scene};
 use frame_rate::FrameRate;
 
 
@@ -61,9 +64,7 @@ fn main() {
     let mut events = ctx.event_pump().unwrap();
     let mut scene = Scene::new(canvas.texture_creator());
 
-    for (i, ref url) in gallery.urls.iter().enumerate() {
-        scene.add(Image::new_with_dimension(url.to_string(), 200 * i as i32, 0, 200, 200));
-    }
+    scene.add(Box::new(GalleryView::new(gallery, width, height)));
 
     let mut frame_rate = FrameRate::new();
     let main_loop = || {
@@ -79,7 +80,7 @@ fn main() {
         }
         canvas.set_draw_color(black);
         canvas.clear();
-        scene.render(&mut canvas);
+        scene.render(&mut canvas, Rect::new(0, 0, width, height));
         let _ = canvas.string(10, 10, &frame_rate.get().to_string(), green);
         canvas.present();
     };

@@ -7,6 +7,7 @@ authors = ["Amadeus <gliheng@gmail.com>"]
 stdweb = "0.3.0"
 serde = "1.0.27"
 serde_derive = "1.0.27"
+lazy_static = "1.0.0"
 
 [dependencies.sdl2]
 version = "0.31.0"

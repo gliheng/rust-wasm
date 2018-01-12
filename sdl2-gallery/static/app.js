@@ -188,7 +188,7 @@ Module.expectedDataFileDownloads++;
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "087352b6-cace-4b29-a4f8-5af7d20c490b"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "92d90ef5-9b1a-4621-9edf-e759594c5b4b"});
 
 })();
 
@@ -2188,13 +2188,16 @@ integrateWasmJS(Module);
 
 // === Body ===
 
-var ASM_CONSTS = [function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); },
- function($0) { Module.STDWEB.from_js($0, (function(){return Module.gallery ;})()); },
- function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientWidth ;})()); },
+var ASM_CONSTS = [function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientWidth ;})()); },
  function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientHeight ;})()); },
  function($0, $1, $2) { $1 = Module.STDWEB.to_js($1);$2 = Module.STDWEB.to_js($2);Module.STDWEB.from_js($0, (function(){var cbk = ($1); fetch (($2)). then (rsp => rsp.arrayBuffer ()). then (ab => new Uint8Array (ab)). then (function (buf){cbk (buf);});})()); },
+ function($0) { Module.STDWEB.from_js($0, (function(){return Module.gallery ;})()); },
+ function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); },
  function($0) { Module.STDWEB.increment_refcount( $0 ); },
  function($0) { Module.STDWEB.decrement_refcount( $0 ); },
+ function($0, $1) { $0 = Module.STDWEB.to_js($0);$1 = Module.STDWEB.to_js($1);var array = ($0); var pointer = ($1); HEAPU8.set (array , pointer); },
+ function($0, $1) { $1 = Module.STDWEB.to_js($1);Module.STDWEB.from_js($0, (function(){return ($1). length ;})()); },
+ function($0) { return (Module.STDWEB.acquire_js_reference( $0 ) instanceof Uint8Array) | 0; },
  function() { Module.STDWEB = {}; },
  function() { Module.STDWEB.alloc = _malloc ; Module.STDWEB.dyncall = Runtime.dynCall ; Module.STDWEB.utf8_len = lengthBytesUTF8 ; },
  function() { Module.STDWEB.to_utf8 = function to_utf8 (str , addr){for (var i = 0 ; i < str.length ; ++i){var u = str.charCodeAt (i); if (u >= 0xD800 && u <= 0xDFFF){u = 0x10000 + ((u & 0x3FF)<< 10)| (str.charCodeAt (++i)& 0x3FF);}if (u <= 0x7F){HEAPU8 [addr ++]= u ;}else if (u <= 0x7FF){HEAPU8 [addr ++]= 0xC0 | (u >> 6); HEAPU8 [addr ++]= 0x80 | (u & 63);}else if (u <= 0xFFFF){HEAPU8 [addr ++]= 0xE0 | (u >> 12); HEAPU8 [addr ++]= 0x80 | ((u >> 6)& 63); HEAPU8 [addr ++]= 0x80 | (u & 63);}else if (u <= 0x1FFFFF){HEAPU8 [addr ++]= 0xF0 | (u >> 18); HEAPU8 [addr ++]= 0x80 | ((u >> 12)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 6)& 63); HEAPU8 [addr ++]= 0x80 | (u & 63);}else if (u <= 0x3FFFFFF){HEAPU8 [addr ++]= 0xF8 | (u >> 24); HEAPU8 [addr ++]= 0x80 | ((u >> 18)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 12)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 6)& 63); HEAPU8 [addr ++]= 0x80 | (u & 63);}else {HEAPU8 [addr ++]= 0xFC | (u >> 30); HEAPU8 [addr ++]= 0x80 | ((u >> 24)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 18)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 12)& 63); HEAPU8 [addr ++]= 0x80 | ((u >> 6)& 63); HEAPU8 [addr ++]= 0x80 | (u & 63);}}}; },
@@ -2205,9 +2208,6 @@ var ASM_CONSTS = [function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); 
  function() { console.error( 'Encountered a panic!' ); },
  function($0, $1) { console.error( 'Panic error message:', Module.STDWEB.to_js_string( $0, $1 ) ); },
  function($0, $1, $2) { console.error( 'Panic location:', Module.STDWEB.to_js_string( $0, $1 ) + ':' + $2 ); },
- function($0, $1) { $0 = Module.STDWEB.to_js($0);$1 = Module.STDWEB.to_js($1);var array = ($0); var pointer = ($1); HEAPU8.set (array , pointer); },
- function($0, $1) { $1 = Module.STDWEB.to_js($1);Module.STDWEB.from_js($0, (function(){return ($1). length ;})()); },
- function($0) { return (Module.STDWEB.acquire_js_reference( $0 ) instanceof Uint8Array) | 0; },
  function($0, $1) { var object = Module.STDWEB.acquire_js_reference( $0 );Module.STDWEB.serialize_object( $1, object ); },
  function($0, $1) { var array = Module.STDWEB.acquire_js_reference( $0 );Module.STDWEB.serialize_array( $1, array ); },
  function() { return screen.width; },
@@ -2252,7 +2252,7 @@ function _emscripten_asm_const_i(code) {
 
 STATIC_BASE = Runtime.GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 162480;
+STATICTOP = STATIC_BASE + 162992;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -2261,7 +2261,7 @@ memoryInitializer = Module["wasmJSMethod"].indexOf("asmjs") >= 0 || Module["wasm
 
 
 
-var STATIC_BUMP = 162480;
+var STATIC_BUMP = 162992;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -10595,9 +10595,9 @@ function nullFunc_viif(x) { Module["printErr"]("Invalid function pointer called 
 
 function nullFunc_viiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-Module['wasmTableSize'] = 74752;
+Module['wasmTableSize'] = 74240;
 
-Module['wasmMaxTableSize'] = 74752;
+Module['wasmMaxTableSize'] = 74240;
 
 function invoke_iiiiiiii(index,a1,a2,a3,a4,a5,a6,a7) {
   try {
@@ -10939,22 +10939,10 @@ Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enla
 var asm =Module["asm"]// EMSCRIPTEN_END_ASM
 (Module.asmGlobalArg, Module.asmLibraryArg, buffer);
 
-var real____rdl_dealloc = asm["___rdl_dealloc"]; asm["___rdl_dealloc"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_dealloc.apply(null, arguments);
-};
-
 var real__main = asm["_main"]; asm["_main"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return real__main.apply(null, arguments);
-};
-
-var real____rdl_usable_size = asm["___rdl_usable_size"]; asm["___rdl_usable_size"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_usable_size.apply(null, arguments);
 };
 
 var real_stackSave = asm["stackSave"]; asm["stackSave"] = function() {
@@ -10969,22 +10957,10 @@ var real__rust_eh_personality = asm["_rust_eh_personality"]; asm["_rust_eh_perso
   return real__rust_eh_personality.apply(null, arguments);
 };
 
-var real____rdl_grow_in_place = asm["___rdl_grow_in_place"]; asm["___rdl_grow_in_place"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_grow_in_place.apply(null, arguments);
-};
-
 var real_setThrew = asm["setThrew"]; asm["setThrew"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return real_setThrew.apply(null, arguments);
-};
-
-var real____rdl_alloc_zeroed = asm["___rdl_alloc_zeroed"]; asm["___rdl_alloc_zeroed"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_alloc_zeroed.apply(null, arguments);
 };
 
 var real__fflush = asm["_fflush"]; asm["_fflush"] = function() {
@@ -10999,10 +10975,10 @@ var real_setTempRet0 = asm["setTempRet0"]; asm["setTempRet0"] = function() {
   return real_setTempRet0.apply(null, arguments);
 };
 
-var real____rdl_alloc_excess = asm["___rdl_alloc_excess"]; asm["___rdl_alloc_excess"] = function() {
+var real__llvm_ctlz_i64 = asm["_llvm_ctlz_i64"]; asm["_llvm_ctlz_i64"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_alloc_excess.apply(null, arguments);
+  return real__llvm_ctlz_i64.apply(null, arguments);
 };
 
 var real__sbrk = asm["_sbrk"]; asm["_sbrk"] = function() {
@@ -11021,12 +10997,6 @@ var real__fileno = asm["_fileno"]; asm["_fileno"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return real__fileno.apply(null, arguments);
-};
-
-var real____rdl_oom = asm["___rdl_oom"]; asm["___rdl_oom"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_oom.apply(null, arguments);
 };
 
 var real_stackAlloc = asm["stackAlloc"]; asm["stackAlloc"] = function() {
@@ -11063,12 +11033,6 @@ var real__llvm_bswap_i16 = asm["_llvm_bswap_i16"]; asm["_llvm_bswap_i16"] = func
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return real__llvm_bswap_i16.apply(null, arguments);
-};
-
-var real____rdl_realloc_excess = asm["___rdl_realloc_excess"]; asm["___rdl_realloc_excess"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_realloc_excess.apply(null, arguments);
 };
 
 var real__emscripten_get_global_libc = asm["_emscripten_get_global_libc"]; asm["_emscripten_get_global_libc"] = function() {
@@ -11119,12 +11083,6 @@ var real__strstr = asm["_strstr"]; asm["_strstr"] = function() {
   return real__strstr.apply(null, arguments);
 };
 
-var real____rdl_realloc = asm["___rdl_realloc"]; asm["___rdl_realloc"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_realloc.apply(null, arguments);
-};
-
 var real_stackRestore = asm["stackRestore"]; asm["stackRestore"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -11137,42 +11095,16 @@ var real__malloc = asm["_malloc"]; asm["_malloc"] = function() {
   return real__malloc.apply(null, arguments);
 };
 
-var real__llvm_ctlz_i64 = asm["_llvm_ctlz_i64"]; asm["_llvm_ctlz_i64"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real__llvm_ctlz_i64.apply(null, arguments);
-};
-
 var real__pthread_mutex_lock = asm["_pthread_mutex_lock"]; asm["_pthread_mutex_lock"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return real__pthread_mutex_lock.apply(null, arguments);
 };
-
-var real____rdl_shrink_in_place = asm["___rdl_shrink_in_place"]; asm["___rdl_shrink_in_place"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_shrink_in_place.apply(null, arguments);
-};
-
-var real____rdl_alloc = asm["___rdl_alloc"]; asm["___rdl_alloc"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____rdl_alloc.apply(null, arguments);
-};
 Module["asm"] = asm;
-var ___rdl_dealloc = Module["___rdl_dealloc"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_dealloc"].apply(null, arguments) };
 var _main = Module["_main"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_main"].apply(null, arguments) };
-var ___rdl_usable_size = Module["___rdl_usable_size"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_usable_size"].apply(null, arguments) };
 var stackSave = Module["stackSave"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -11181,18 +11113,10 @@ var _rust_eh_personality = Module["_rust_eh_personality"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_rust_eh_personality"].apply(null, arguments) };
-var ___rdl_grow_in_place = Module["___rdl_grow_in_place"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_grow_in_place"].apply(null, arguments) };
 var setThrew = Module["setThrew"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["setThrew"].apply(null, arguments) };
-var ___rdl_alloc_zeroed = Module["___rdl_alloc_zeroed"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_alloc_zeroed"].apply(null, arguments) };
 var _fflush = Module["_fflush"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -11201,10 +11125,10 @@ var setTempRet0 = Module["setTempRet0"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["setTempRet0"].apply(null, arguments) };
-var ___rdl_alloc_excess = Module["___rdl_alloc_excess"] = function() {
+var _llvm_ctlz_i64 = Module["_llvm_ctlz_i64"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_alloc_excess"].apply(null, arguments) };
+  return Module["asm"]["_llvm_ctlz_i64"].apply(null, arguments) };
 var _memset = Module["_memset"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -11225,10 +11149,6 @@ var _fileno = Module["_fileno"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_fileno"].apply(null, arguments) };
-var ___rdl_oom = Module["___rdl_oom"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_oom"].apply(null, arguments) };
 var stackAlloc = Module["stackAlloc"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -11253,10 +11173,6 @@ var _llvm_bswap_i16 = Module["_llvm_bswap_i16"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_llvm_bswap_i16"].apply(null, arguments) };
-var ___rdl_realloc_excess = Module["___rdl_realloc_excess"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_realloc_excess"].apply(null, arguments) };
 var _emscripten_get_global_libc = Module["_emscripten_get_global_libc"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -11293,10 +11209,6 @@ var _strstr = Module["_strstr"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_strstr"].apply(null, arguments) };
-var ___rdl_realloc = Module["___rdl_realloc"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_realloc"].apply(null, arguments) };
 var stackRestore = Module["stackRestore"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -11305,22 +11217,10 @@ var _malloc = Module["_malloc"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_malloc"].apply(null, arguments) };
-var _llvm_ctlz_i64 = Module["_llvm_ctlz_i64"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_llvm_ctlz_i64"].apply(null, arguments) };
 var _pthread_mutex_lock = Module["_pthread_mutex_lock"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_pthread_mutex_lock"].apply(null, arguments) };
-var ___rdl_shrink_in_place = Module["___rdl_shrink_in_place"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_shrink_in_place"].apply(null, arguments) };
-var ___rdl_alloc = Module["___rdl_alloc"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___rdl_alloc"].apply(null, arguments) };
 var dynCall_iiiiiiii = Module["dynCall_iiiiiiii"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
