@@ -188,7 +188,7 @@ Module.expectedDataFileDownloads++;
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "92d90ef5-9b1a-4621-9edf-e759594c5b4b"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "86ca87c9-2acf-4639-8ec7-ad4023a7803c"});
 
 })();
 
@@ -2188,10 +2188,10 @@ integrateWasmJS(Module);
 
 // === Body ===
 
-var ASM_CONSTS = [function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientWidth ;})()); },
- function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientHeight ;})()); },
- function($0, $1, $2) { $1 = Module.STDWEB.to_js($1);$2 = Module.STDWEB.to_js($2);Module.STDWEB.from_js($0, (function(){var cbk = ($1); fetch (($2)). then (rsp => rsp.arrayBuffer ()). then (ab => new Uint8Array (ab)). then (function (buf){cbk (buf);});})()); },
+var ASM_CONSTS = [function($0, $1, $2) { $1 = Module.STDWEB.to_js($1);$2 = Module.STDWEB.to_js($2);Module.STDWEB.from_js($0, (function(){var cbk = ($1); fetch (($2)). then (rsp => rsp.arrayBuffer ()). then (ab => new Uint8Array (ab)). then (function (buf){cbk (buf);});})()); },
  function($0) { Module.STDWEB.from_js($0, (function(){return Module.gallery ;})()); },
+ function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientWidth ;})()); },
+ function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientHeight ;})()); },
  function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); },
  function($0) { Module.STDWEB.increment_refcount( $0 ); },
  function($0) { Module.STDWEB.decrement_refcount( $0 ); },
@@ -2252,7 +2252,7 @@ function _emscripten_asm_const_i(code) {
 
 STATIC_BASE = Runtime.GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 162992;
+STATICTOP = STATIC_BASE + 163184;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -2261,7 +2261,7 @@ memoryInitializer = Module["wasmJSMethod"].indexOf("asmjs") >= 0 || Module["wasm
 
 
 
-var STATIC_BUMP = 162992;
+var STATIC_BUMP = 163184;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 

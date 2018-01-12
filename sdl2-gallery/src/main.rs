@@ -4,6 +4,8 @@ extern crate sdl2;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate lazy_static;
 
 mod emscripten;
 mod frame_rate;
@@ -21,7 +23,7 @@ use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::rect::Rect;
 use model::Gallery;
 use view::GalleryView;
-use display::{Scene};
+use display::{Scene, Display};
 use frame_rate::FrameRate;
 
 
@@ -77,6 +79,7 @@ fn main() {
                 },
                 _ => {}
             }
+            scene.handle_events(&event);
         }
         canvas.set_draw_color(black);
         canvas.clear();

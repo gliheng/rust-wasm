@@ -3,24 +3,37 @@ use std::collections::HashMap;
 use std::default::Default;
 use std::os::raw::{c_void, c_char};
 use std::ffi::{CString};
+use std::sync::Mutex;
 use sdl2::video::{Window, WindowContext};
 use sdl2::image::{LoadSurface};
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::surface::Surface;
 use sdl2::render::Texture;
 use sdl2::rect::Rect;
+use sdl2::event::Event;
 use stdweb::web::TypedArray;
+use std::marker::{Send};
 use utils;
 
 static mut TEXTURE_CREATOR: Option<TextureCreator<WindowContext>> = None;
-thread_local!(static LOAD_REGISTER: RefCell<HashMap<String, (u32, u32, Texture)>> = RefCell::new(HashMap::new()));
+lazy_static!{
+    static ref LOAD_REGISTER: Mutex<HashMap<String, SizedTexture>> = Mutex::new(HashMap::new());
+}
+
+struct SizedTexture(u32, u32, Texture);
+unsafe impl Send for SizedTexture {}
+
+pub trait Display {
+    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect);
+    // fn render(&self, canvas: &mut Canvas<Window>, x: i32, y: i32, w: u32, h: u32);
+}
 
 pub struct Scene {
     children: Vec<Box<Display>>,
 }
 
 impl Scene {
-    pub fn new(tc: TextureCreator<WindowContext>) -> Scene {
+    pub fn new(tc: TextureCreator<WindowContext>, ) -> Scene {
         unsafe {
             TEXTURE_CREATOR = Some(tc);
         }
@@ -31,16 +44,17 @@ impl Scene {
     pub fn add(&mut self, ui: Box<Display>) {
         self.children.push(ui);
     }
-    pub fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
+    pub fn handle_events(&mut self, event: &Event) {
+        
+    }
+}
+
+impl Display for Scene {
+    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         for c in &self.children {
             c.render(canvas, rect.clone());
         }
     }
-}
-
-pub trait Display {
-    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect);
-    // fn render(&self, canvas: &mut Canvas<Window>, x: i32, y: i32, w: u32, h: u32);
 }
 
 pub struct Image {
@@ -72,13 +86,12 @@ impl Image {
 
 impl Display for Image {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-        LOAD_REGISTER.with(|m| {
-            if let Some(&(w, h, ref tex)) = m.borrow().get(&self.src) {
-                let _ = canvas.copy(tex,
-                                    Rect::new(0, 0, w, h),
-                                    rect);
-            }
-        });
+        let m = LOAD_REGISTER.lock().unwrap();
+        if let Some(&SizedTexture(w, h, ref tex)) = m.get(&self.src) {
+            let _ = canvas.copy(tex,
+                                Rect::new(0, 0, w, h),
+                                rect);
+        }
     }
 }
 
@@ -117,21 +130,20 @@ pub fn load_img(src: &str) {
 
 extern "C" fn loaded(src: *const c_void, file: *mut c_char) {
     unsafe {
-        LOAD_REGISTER.with(|m| {
-            let src = Box::from_raw(src as *mut String);
-            let file = CString::from_raw(file).into_string().unwrap();
+        let mut m = LOAD_REGISTER.lock().unwrap();
+        let src = Box::from_raw(src as *mut String);
+        let file = CString::from_raw(file).into_string().unwrap();
 
-            if let Ok(surf) = Surface::from_file(file) {
-                if let Some(ref tc) = TEXTURE_CREATOR {
-                    let w = surf.width();
-                    let h = surf.height();
-                    let tex = tc.create_texture_from_surface(surf).expect("failed to create texture fron surface");
-                    m.borrow_mut().insert(*src, (w, h, tex));
-                } else {
-                    println!("load err");
-                }
+        if let Ok(surf) = Surface::from_file(file) {
+            if let Some(ref tc) = TEXTURE_CREATOR {
+                let w = surf.width();
+                let h = surf.height();
+                let tex = tc.create_texture_from_surface(surf).expect("failed to create texture fron surface");
+                m.insert(*src, SizedTexture(w, h, tex));
+            } else {
+                println!("load err");
             }
-        });
+        }
     }
 }
 
