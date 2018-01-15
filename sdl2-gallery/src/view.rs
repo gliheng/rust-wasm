@@ -5,30 +5,35 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::rect::Rect;
 use sdl2::event::Event;
+use std::rc::Rc;
 
 pub struct GalleryView {
-    curr: ScrollView,
-    next: ScrollView,
+    curr: Rc<ScrollView>,
+    next: Rc<ScrollView>,
     width: u32,
     height: u32,
 }
 
 impl GalleryView {
-    pub fn new(config: Gallery, width: u32, height: u32) -> GalleryView {
+    pub fn new(config: Gallery, width: u32, height: u32) -> Rc<GalleryView> {
         let mut urls = config.urls.iter();
 
         let mut curr = ScrollView::new(Image::new_with_dimension(urls.next().unwrap().to_owned(), width, height));
-        curr.set_rect(0, 0, width, height);
+        if let Some(mut v) = Rc::get_mut(&mut curr) {
+            v.set_rect(0, 0, width, height);
+        }
 
         let mut next = ScrollView::new(Image::new_with_dimension(urls.next().unwrap().to_owned(), width, height));
-        next.set_rect(width as i32, 0, width, height);
+        if let Some(mut v) = Rc::get_mut(&mut next) {
+            v.set_rect(0, 0, width, height);
+        }
 
-        GalleryView {
+        Rc::new(GalleryView {
             curr,
             next,
             width,
             height,
-        }
+        })
     }
 }
 
@@ -53,16 +58,16 @@ impl Display for GalleryView {
 }
 
 pub struct ScrollView {
-    content: Image,
+    content: Rc<Image>,
     rect: Rect,
 }
 
 impl ScrollView {
-    fn new(content: Image) -> ScrollView {
-        ScrollView {
+    fn new(content: Rc<Image>) -> Rc<ScrollView> {
+        Rc::new(ScrollView {
             content,
             rect: Rect::new(0, 0, 0, 0),
-        }
+        })
     }
 
     fn set_rect(&mut self, x: i32, y: i32, w: u32, h: u32) {

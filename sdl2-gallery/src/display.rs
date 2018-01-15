@@ -13,6 +13,7 @@ use sdl2::rect::Rect;
 use sdl2::event::Event;
 use stdweb::web::TypedArray;
 use std::marker::{Send};
+use std::rc::Rc;
 use utils;
 
 static mut TEXTURE_CREATOR: Option<TextureCreator<WindowContext>> = None;
@@ -30,7 +31,7 @@ pub trait Display {
 }
 
 pub struct Scene {
-    children: Vec<Box<Display>>,
+    children: Vec<Rc<Display>>,
 }
 
 impl Scene {
@@ -42,11 +43,8 @@ impl Scene {
             children: vec![],
         }
     }
-    pub fn add(&mut self, ui: Box<Display>) {
+    pub fn add(&mut self, ui: Rc<Display>) {
         self.children.push(ui);
-    }
-    pub fn handle_events(&mut self, event: &Event) {
-        
     }
 }
 
@@ -55,6 +53,9 @@ impl Display for Scene {
         for c in &self.children {
             c.render(canvas, rect.clone());
         }
+    }
+    fn handle_events(&mut self, event: &Event) {
+        
     }
 }
 
@@ -66,22 +67,22 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(src: String) -> Image {
+    pub fn new(src: String) -> Rc<Image> {
         load_img(&src);
-        Image {
+        Rc::new(Image {
             dirty: false,
             src,
             ..Default::default()
-        }
+        })
     }
-    pub fn new_with_dimension(src: String, w: u32, h: u32) -> Image {
+    pub fn new_with_dimension(src: String, w: u32, h: u32) -> Rc<Image> {
         load_img(&src);
-        Image {
+        Rc::new(Image {
             dirty: false,
             src,
             w,
             h,
-        }
+        })
     }
 }
 
