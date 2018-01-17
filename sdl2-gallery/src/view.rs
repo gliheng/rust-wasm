@@ -7,6 +7,15 @@ use sdl2::rect::Rect;
 use sdl2::event::Event;
 use std::rc::{Rc, Weak};
 use std::cell::RefCell;
+use std::time::{Duration, Instant};
+
+
+pub struct Transition<T> {
+    start_time: Instant,
+    duration: Duration,
+    curr_val: T,
+    target_val: T,
+}
 
 pub struct GalleryView {
     parent: Weak<RefCell<Scene>>,
@@ -16,6 +25,7 @@ pub struct GalleryView {
     height: u32,
     dragging: bool,
     move_x: i32,
+    transition: Option<Transition<i32>>,
 }
 
 impl GalleryView {
@@ -36,7 +46,17 @@ impl GalleryView {
             height,
             dragging: false,
             move_x: 0,
+            transition: None,
         }))
+    }
+
+    fn move_to(&mut self, x: i32) {
+        self.transition = Some(Transition {
+            start_time: Instant::now(),
+            duration: Duration::from_millis(2000),
+            curr_val: self.move_x,
+            target_val: x,
+        });
     }
 }
 
@@ -61,13 +81,17 @@ impl Display for GalleryView {
             },
             &Event::FingerUp {touch_id, .. } => {
                 self.dragging = false;
-                self.move_x = 0;
+                self.move_to(0);
             },
             _ => (),
         }
     }
     fn is_interactive(&self) -> bool {
         true
+    }
+    fn interact(&mut self) {
+        if !self.dragging {
+        }
     }
 }
 

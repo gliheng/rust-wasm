@@ -84,6 +84,7 @@ fn main() {
         }
         canvas.set_draw_color(black);
         canvas.clear();
+        scene.borrow().interact();
         scene.borrow().render(&mut canvas, Rect::new(0, 0, width, height));
         let _ = canvas.string(10, 10, &frame_rate.get().to_string(), green);
         canvas.present();

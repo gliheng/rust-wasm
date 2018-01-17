@@ -29,6 +29,7 @@ pub trait Display {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect);
     fn handle_events(&mut self, event: &Event) {}
     fn is_interactive(&self) -> bool { false }
+    fn interact(&mut self) {}
 }
 
 pub struct Scene {
@@ -50,6 +51,11 @@ impl Scene {
         self.children.push(c.clone());
         if c.borrow().is_interactive() {
             self.listeners.push(c.clone());
+        }
+    }
+    pub fn interact(&self) {
+        for c in &self.listeners {
+            c.borrow_mut().interact();
         }
     }
 }
