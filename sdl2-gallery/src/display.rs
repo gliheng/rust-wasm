@@ -29,6 +29,10 @@ pub trait Display {
     fn handle_events(&mut self, event: &Event) {}
 }
 
+lazy_static! {
+    [pub] static ref SCENE: Option<Rc<RefCell<Scene>>> = None;
+}
+
 pub struct Scene {
     children: Vec<Rc<RefCell<Display>>>,
 }
@@ -38,9 +42,11 @@ impl Scene {
         unsafe {
             TEXTURE_CREATOR = Some(tc);
         }
-        Rc::new(RefCell::new(Scene {
+        let scene = Rc::new(RefCell::new(Scene {
             children: vec![],
-        }))
+        }));
+        SCENE = scene;
+        scene
     }
     pub fn add_child(&mut self, c: Rc<RefCell<Display>>) {
         self.children.push(c);
