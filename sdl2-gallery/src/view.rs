@@ -5,42 +5,39 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::rect::Rect;
 use sdl2::event::Event;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
+use std::cell::RefCell;
 
 pub struct GalleryView {
-    curr: Rc<ScrollView>,
-    next: Rc<ScrollView>,
+    curr: Rc<RefCell<Display>>,
+    next: Rc<RefCell<Display>>,
     width: u32,
     height: u32,
 }
 
 impl GalleryView {
-    pub fn new(config: Gallery, width: u32, height: u32) -> Rc<GalleryView> {
+    pub fn new(config: Gallery, width: u32, height: u32) -> Rc<RefCell<GalleryView>> {
         let mut urls = config.urls.iter();
 
-        let mut curr = ScrollView::new(Image::new_with_dimension(urls.next().unwrap().to_owned(), width, height));
-        if let Some(mut v) = Rc::get_mut(&mut curr) {
-            v.set_rect(0, 0, width, height);
-        }
+        let curr = ScrollView::new(Image::new_with_dimension(urls.next().unwrap().to_owned(), width, height));
+        curr.borrow_mut().set_rect(0, 0, width, height);
 
-        let mut next = ScrollView::new(Image::new_with_dimension(urls.next().unwrap().to_owned(), width, height));
-        if let Some(mut v) = Rc::get_mut(&mut next) {
-            v.set_rect(0, 0, width, height);
-        }
+        let next = ScrollView::new(Image::new_with_dimension(urls.next().unwrap().to_owned(), width, height));
+        next.borrow_mut().set_rect(0, 0, width, height);
 
-        Rc::new(GalleryView {
+        Rc::new(RefCell::new(GalleryView {
             curr,
             next,
             width,
             height,
-        })
+        }))
     }
 }
 
 impl Display for GalleryView {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-        self.curr.render(canvas, rect.clone());
-        self.next.render(canvas, rect.clone());
+        self.curr.borrow().render(canvas, rect.clone());
+        self.next.borrow().render(canvas, rect.clone());
     }
     fn handle_events(&mut self, event: &Event) {
         match event {
@@ -63,11 +60,11 @@ pub struct ScrollView {
 }
 
 impl ScrollView {
-    fn new(content: Rc<Image>) -> Rc<ScrollView> {
-        Rc::new(ScrollView {
+    fn new(content: Rc<Image>) -> Rc<RefCell<ScrollView>> {
+        Rc::new(RefCell::new(ScrollView {
             content,
             rect: Rect::new(0, 0, 0, 0),
-        })
+        }))
     }
 
     fn set_rect(&mut self, x: i32, y: i32, w: u32, h: u32) {

@@ -24,6 +24,7 @@ use sdl2::rect::Rect;
 use model::Gallery;
 use view::GalleryView;
 use display::{Scene, Display};
+use std::rc::Rc;
 use frame_rate::FrameRate;
 
 
@@ -64,9 +65,9 @@ fn main() {
     let green = Color::RGB(0, 255, 0);
 
     let mut events = ctx.event_pump().unwrap();
-    let mut scene = Scene::new(canvas.texture_creator());
+    let scene = Scene::new(canvas.texture_creator());
 
-    scene.add(GalleryView::new(gallery, width, height));
+    scene.borrow_mut().add_child(GalleryView::new(gallery, width, height));
 
     let mut frame_rate = FrameRate::new();
     let main_loop = || {
@@ -79,11 +80,11 @@ fn main() {
                 },
                 _ => {}
             }
-            scene.handle_events(&event);
+            scene.borrow_mut().handle_events(&event);
         }
         canvas.set_draw_color(black);
         canvas.clear();
-        scene.render(&mut canvas, Rect::new(0, 0, width, height));
+        scene.borrow().render(&mut canvas, Rect::new(0, 0, width, height));
         let _ = canvas.string(10, 10, &frame_rate.get().to_string(), green);
         canvas.present();
     };

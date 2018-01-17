@@ -1,7 +1,9 @@
 use std::cell::RefCell;
+use std::rc::Rc;
 use std::collections::HashMap;
 use std::default::Default;
 use std::os::raw::{c_void, c_char};
+use std::marker::{Send};
 use std::ffi::{CString};
 use std::sync::Mutex;
 use sdl2::video::{Window, WindowContext};
@@ -12,8 +14,6 @@ use sdl2::render::Texture;
 use sdl2::rect::Rect;
 use sdl2::event::Event;
 use stdweb::web::TypedArray;
-use std::marker::{Send};
-use std::rc::Rc;
 use utils;
 
 static mut TEXTURE_CREATOR: Option<TextureCreator<WindowContext>> = None;
@@ -26,36 +26,34 @@ unsafe impl Send for SizedTexture {}
 
 pub trait Display {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect);
-    // fn render(&self, canvas: &mut Canvas<Window>, x: i32, y: i32, w: u32, h: u32);
     fn handle_events(&mut self, event: &Event) {}
 }
 
 pub struct Scene {
-    children: Vec<Rc<Display>>,
+    children: Vec<Rc<RefCell<Display>>>,
 }
 
 impl Scene {
-    pub fn new(tc: TextureCreator<WindowContext>, ) -> Scene {
+    pub fn new(tc: TextureCreator<WindowContext>, ) -> Rc<RefCell<Scene>> {
         unsafe {
             TEXTURE_CREATOR = Some(tc);
         }
-        Scene {
+        Rc::new(RefCell::new(Scene {
             children: vec![],
-        }
+        }))
     }
-    pub fn add(&mut self, ui: Rc<Display>) {
-        self.children.push(ui);
+    pub fn add_child(&mut self, c: Rc<RefCell<Display>>) {
+        self.children.push(c);
     }
 }
 
 impl Display for Scene {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         for c in &self.children {
-            c.render(canvas, rect.clone());
+            c.borrow().render(canvas, rect.clone());
         }
     }
     fn handle_events(&mut self, event: &Event) {
-        
     }
 }
 
