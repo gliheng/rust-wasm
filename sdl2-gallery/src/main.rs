@@ -67,7 +67,7 @@ fn main() {
     let mut events = ctx.event_pump().unwrap();
     let scene = Scene::new(canvas.texture_creator());
 
-    scene.borrow_mut().add_child(GalleryView::new(gallery, width, height));
+    scene.borrow_mut().add_child(GalleryView::new(scene.clone(), gallery, width, height));
 
     let mut frame_rate = FrameRate::new();
     let main_loop = || {

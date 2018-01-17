@@ -201,7 +201,7 @@ Module.expectedDataFileDownloads++;
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "c9b4d83c-d85a-4866-8dc7-6e80818ab28c"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "99043c2d-3a9c-47ba-8fca-f77918c6ea99"});
 
 })();
 
@@ -1981,7 +1981,7 @@ function _emscripten_asm_const_iiiii(code, a0, a1, a2, a3) {
 
 STATIC_BASE = GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 163040;
+STATICTOP = STATIC_BASE + 163072;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -1990,7 +1990,7 @@ STATICTOP = STATIC_BASE + 163040;
 
 
 
-var STATIC_BUMP = 163040;
+var STATIC_BUMP = 163072;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 

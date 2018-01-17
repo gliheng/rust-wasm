@@ -15,6 +15,7 @@ use sdl2::rect::Rect;
 use sdl2::event::Event;
 use stdweb::web::TypedArray;
 use utils;
+use std::sync::Arc;
 
 static mut TEXTURE_CREATOR: Option<TextureCreator<WindowContext>> = None;
 lazy_static!{
@@ -27,29 +28,29 @@ unsafe impl Send for SizedTexture {}
 pub trait Display {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect);
     fn handle_events(&mut self, event: &Event) {}
-}
-
-lazy_static! {
-    [pub] static ref SCENE: Option<Rc<RefCell<Scene>>> = None;
+    fn is_interactive(&self) -> bool { false }
 }
 
 pub struct Scene {
     children: Vec<Rc<RefCell<Display>>>,
+    listeners: Vec<Rc<RefCell<Display>>>,
 }
 
 impl Scene {
-    pub fn new(tc: TextureCreator<WindowContext>, ) -> Rc<RefCell<Scene>> {
+    pub fn new(tc: TextureCreator<WindowContext>) -> Rc<RefCell<Scene>> {
         unsafe {
             TEXTURE_CREATOR = Some(tc);
         }
-        let scene = Rc::new(RefCell::new(Scene {
-            children: vec![],
-        }));
-        SCENE = scene;
-        scene
+        Rc::new(RefCell::new(Scene {
+            children: Vec::new(),
+            listeners: Vec::new(),
+        }))
     }
     pub fn add_child(&mut self, c: Rc<RefCell<Display>>) {
-        self.children.push(c);
+        self.children.push(c.clone());
+        if c.borrow().is_interactive() {
+            self.listeners.push(c.clone());
+        }
     }
 }
 
@@ -60,6 +61,9 @@ impl Display for Scene {
         }
     }
     fn handle_events(&mut self, event: &Event) {
+        for c in &self.listeners {
+            c.borrow_mut().handle_events(&event);
+        }
     }
 }
 

@@ -9,14 +9,17 @@ use std::rc::{Rc, Weak};
 use std::cell::RefCell;
 
 pub struct GalleryView {
+    parent: Weak<RefCell<Scene>>,
     curr: Rc<RefCell<Display>>,
     next: Rc<RefCell<Display>>,
     width: u32,
     height: u32,
+    dragging: bool,
+    move_x: i32,
 }
 
 impl GalleryView {
-    pub fn new(config: Gallery, width: u32, height: u32) -> Rc<RefCell<GalleryView>> {
+    pub fn new(parent: Rc<RefCell<Scene>>, config: Gallery, width: u32, height: u32) -> Rc<RefCell<GalleryView>> {
         let mut urls = config.urls.iter();
 
         let curr = ScrollView::new(Image::new_with_dimension(urls.next().unwrap().to_owned(), width, height));
@@ -26,31 +29,45 @@ impl GalleryView {
         next.borrow_mut().set_rect(0, 0, width, height);
 
         Rc::new(RefCell::new(GalleryView {
+            parent: Rc::downgrade(&parent),
             curr,
             next,
             width,
             height,
+            dragging: false,
+            move_x: 0,
         }))
     }
 }
 
 impl Display for GalleryView {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-        self.curr.borrow().render(canvas, rect.clone());
-        self.next.borrow().render(canvas, rect.clone());
+        let mut r1 = rect.clone();
+        r1.offset(self.move_x, 0);
+        self.curr.borrow().render(canvas, r1);
+        let mut r2 = rect.clone();
+        r2.offset(self.move_x + self.width as i32, 0);
+        self.next.borrow().render(canvas, r2);
     }
     fn handle_events(&mut self, event: &Event) {
         match event {
             &Event::FingerDown { x, y, touch_id, .. } => {
-                println!("down");
+                self.dragging = true;
             },
-            &Event::FingerMotion { x, y, .. } => {
+            &Event::FingerMotion { x, y, dx, dy, .. } => {
+                if self.dragging {
+                    self.move_x += (self.width as f32 * dx) as i32;
+                }
             },
             &Event::FingerUp {touch_id, .. } => {
-                println!("up");
+                self.dragging = false;
+                self.move_x = 0;
             },
             _ => (),
         }
+    }
+    fn is_interactive(&self) -> bool {
+        true
     }
 }
 
@@ -77,8 +94,6 @@ impl ScrollView {
 
 impl Display for ScrollView {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-        if let Some(r) = self.rect.intersection(rect) {
-            self.content.render(canvas, r);
-        }
+        self.content.render(canvas, rect);
     }
 }
