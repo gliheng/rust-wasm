@@ -81,22 +81,33 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(src: String) -> Rc<Image> {
-        load_img(&src);
-        Rc::new(Image {
+    pub fn new(src: String) -> Rc<RefCell<Image>> {
+        if src != "" {
+            load_img(&src);
+        }
+
+        Rc::new(RefCell::new(Image {
             dirty: false,
             src,
             ..Default::default()
-        })
+        }))
     }
-    pub fn new_with_dimension(src: String, w: u32, h: u32) -> Rc<Image> {
-        load_img(&src);
-        Rc::new(Image {
+    pub fn new_with_dimension(src: String, w: u32, h: u32) -> Rc<RefCell<Image>> {
+        if src != "" {
+            load_img(&src);
+        }
+        Rc::new(RefCell::new(Image {
             dirty: false,
             src,
             w,
             h,
-        })
+        }))
+    }
+    pub fn set_src(&mut self, src: &str) {
+        self.src = src.to_string();
+        if src != "" {
+            load_img(src);
+        }
     }
 }
 
@@ -124,11 +135,18 @@ impl Default for Image {
 }
 
 pub fn load_img(src: &str) {
+    // check if already loaded
+    let m = LOAD_REGISTER.lock().unwrap();
+    if m.get(src).is_some() {
+        return;
+    }
+
     let bsrc = Box::into_raw(Box::new(src.to_string()));
     let ext = (match src.rfind('.') {
         Some(i) => &src[i+1..],
         None => "",
     }).to_string();
+
     utils::fetch(src, move |buf: TypedArray<u8>| {
         use emscripten::{emscripten};
         let v = buf.to_vec();
@@ -149,7 +167,6 @@ extern "C" fn loaded(src: *const c_void, file: *mut c_char) {
         let mut m = LOAD_REGISTER.lock().unwrap();
         let src = Box::from_raw(src as *mut String);
         let file = CString::from_raw(file).into_string().unwrap();
-
         if let Ok(surf) = Surface::from_file(file) {
             if let Some(ref tc) = TEXTURE_CREATOR {
                 let w = surf.width();

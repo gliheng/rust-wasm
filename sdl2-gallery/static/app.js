@@ -201,7 +201,7 @@ Module.expectedDataFileDownloads++;
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "31f8f051-d37c-4d65-8282-84f0d625b259"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "0f27e6dc-b19d-4620-a197-e61d372a31fa"});
 
 })();
 
@@ -1921,9 +1921,9 @@ var ASM_CONSTS = [function($0, $1, $2) { $1 = Module.STDWEB.to_js($1);$2 = Modul
  function($0) { Module.STDWEB.from_js($0, (function(){return Module.gallery ;})()); },
  function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientWidth ;})()); },
  function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientHeight ;})()); },
- function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); },
  function($0) { Module.STDWEB.increment_refcount( $0 ); },
  function($0) { Module.STDWEB.decrement_refcount( $0 ); },
+ function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); },
  function($0, $1) { $0 = Module.STDWEB.to_js($0);$1 = Module.STDWEB.to_js($1);var array = ($0); var pointer = ($1); HEAPU8.set (array , pointer); },
  function($0, $1) { $1 = Module.STDWEB.to_js($1);Module.STDWEB.from_js($0, (function(){return ($1). length ;})()); },
  function($0) { return (Module.STDWEB.acquire_js_reference( $0 ) instanceof Uint8Array) | 0; },
@@ -1981,7 +1981,7 @@ function _emscripten_asm_const_iiiii(code, a0, a1, a2, a3) {
 
 STATIC_BASE = GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 163328;
+STATICTOP = STATIC_BASE + 163680;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -1990,7 +1990,7 @@ STATICTOP = STATIC_BASE + 163328;
 
 
 
-var STATIC_BUMP = 163328;
+var STATIC_BUMP = 163680;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
