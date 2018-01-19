@@ -78,7 +78,6 @@ pub struct Image {
     src: String,
     w: u32,
     h: u32,
-    scale: f64,
 }
 
 impl Image {
@@ -111,8 +110,33 @@ impl Image {
             load_img(src);
         }
     }
-    pub fn set_scale(&mut self, scale: f64) {
-        self.scale = scale;
+    pub fn get_img_size(&self) -> Option<(u32, u32)> {
+        let m = LOAD_REGISTER.lock().unwrap();
+        if let Some(&SizedTexture(img_w, img_h, ..)) = m.get(&self.src) {
+            Some((img_w, img_h))
+        } else {
+            None
+        }
+    }
+
+    pub fn cover_size(img_w: u32, img_h: u32, w: u32, h: u32) -> (u32, u32) {
+        let img_r = img_w as f64 / img_h as f64;
+        let r = w as f64 / h as f64;
+        if img_r > r {
+            ((h as f64 * img_r) as u32, h)
+        } else {
+            (w, (w as f64 / img_r) as u32)
+        }
+    }
+
+    pub fn contain_size(img_w: u32, img_h: u32, w: u32, h: u32) -> (u32, u32) {
+        let img_r = img_w as f64 / img_h as f64;
+        let r = w as f64 / h as f64;
+        if img_r > r {
+            (w, (w as f64 / img_r) as u32)
+        } else {
+            ((img_r * h as f64) as u32, h)
+        }
     }
 }
 
@@ -120,25 +144,17 @@ impl Display for Image {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         let m = LOAD_REGISTER.lock().unwrap();
         if let Some(&SizedTexture(img_w, img_h, ref tex)) = m.get(&self.src) {
-            let img_r = img_w as f64 / img_h as f64;
-            let r = rect.width() as f64 / rect.height() as f64;
             let s_rect = Rect::new(0, 0, img_w, img_h);
-            let t_rect = if img_r > r {
-                let w = rect.width();
-                let h = (img_h as f64 / img_w as f64 * rect.width() as f64) as u32;
-                Rect::new(rect.x(), (rect.height() as i32 - h as i32) / 2 + rect.y(), w, h)
-            } else {
-                let w = (img_w as f64 / img_h as f64 * rect.height() as f64) as u32;
-                let h = rect.height();
-                Rect::new((rect.width() as i32 - w as i32) / 2 + rect.x(), rect.y(), w, h)
-            };
+            let (w, h) = Self::contain_size(img_w, img_h, rect.width(), rect.height());
+            let t_rect = Rect::new((rect.width() as i32 - w as i32) / 2 + rect.x(),
+                                   (rect.height() as i32 - h as i32) / 2 + rect.y(),
+                                   w, h);
             let _ = canvas.copy(tex,
                                 s_rect,
                                 t_rect);
         }
     }
 }
-
 
 impl Default for Image {
     fn default() -> Self {
@@ -147,7 +163,6 @@ impl Default for Image {
             src: "".to_string(),
             w: 0,
             h: 0,
-            scale: 1.0,
         }
     }
 }

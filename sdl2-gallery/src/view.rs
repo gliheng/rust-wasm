@@ -76,41 +76,51 @@ impl GalleryView {
     }
 
     fn set_curr_image(&mut self, idx: usize) {
-        let scrollview = self.prev.borrow();
-        let mut img = scrollview.content.borrow_mut();
+        //  set prev scrollview
+        let mut scrollview = self.prev.borrow_mut();
+        {
+            let mut img = scrollview.content.borrow_mut();
 
-        let i = idx as isize - 1;
-        if i < 0 {
-            img.set_src("");
-        } else if let Some(url) = self.config.urls.get(i as usize) {
-            println!("set prev {}", i);
-            img.set_src(url);
-        } else {
-            img.set_src("");
+            let i = idx as isize - 1;
+            if i < 0 {
+                img.set_src("");
+            } else if let Some(url) = self.config.urls.get(i as usize) {
+                println!("set prev {}", i);
+                img.set_src(url);
+            } else {
+                img.set_src("");
+            }
         }
-        img.set_scale(1.);
+        scrollview.set_scale(1.);
 
-        let scrollview = self.curr.borrow();
-        let mut img = scrollview.content.borrow_mut();
-        if let Some(url) = self.config.urls.get(idx) {
-            img.set_src(url);
-            println!("set curr {}", idx);
+        //  set curr scrollview
+        let mut scrollview = self.curr.borrow_mut();
+        {
+            let mut img = scrollview.content.borrow_mut();
+            if let Some(url) = self.config.urls.get(idx) {
+                img.set_src(url);
+                println!("set curr {}", idx);
 
-        } else {
-            img.set_src("");
+            } else {
+                img.set_src("");
+            }
         }
-        img.set_scale(1.);
+        scrollview.set_scale(1.);
 
-        let scrollview = self.next.borrow();
-        let mut img = scrollview.content.borrow_mut();
-        if let Some(url) = self.config.urls.get(idx + 1) {
-            println!("set next {}", idx+1);
-            img.set_src(url);
-        } else {
-            img.set_src("");
+        //  set next scrollview
+        let mut scrollview = self.next.borrow_mut();
+        {
+            let mut img = scrollview.content.borrow_mut();
+            if let Some(url) = self.config.urls.get(idx + 1) {
+                println!("set next {}", idx+1);
+                img.set_src(url);
+            } else {
+                img.set_src("");
+            }
         }
-        img.set_scale(1.);
+        scrollview.set_scale(1.);
 
+        self.zoom_mode = false;
         self.img_idx = idx;
     }
 
@@ -181,14 +191,12 @@ impl Display for GalleryView {
         for event in &self.gesture_detector.poll() {
             match event {
                 &GestureEvent::DoubleTap => {
-                    println!("you doulbe taped!");
-                    let scrollview = self.curr.borrow();
-                    let mut img = scrollview.content.borrow_mut();
+                    let mut scrollview = self.curr.borrow_mut();
                     if self.zoom_mode {
-                        img.set_scale(0.3);
+                        scrollview.contain();
                         self.zoom_mode = false;
                     } else {
-                        img.set_scale(2.);
+                        scrollview.cover();
                         self.zoom_mode = true;
                     }
                 },
@@ -218,6 +226,9 @@ impl Display for GalleryView {
 pub struct ScrollView {
     pub content: Rc<RefCell<Image>>,
     rect: Rect,
+    scale: f64,
+    offset_x: i32,
+    offset_y: i32,
 }
 
 impl ScrollView {
@@ -225,6 +236,9 @@ impl ScrollView {
         Rc::new(RefCell::new(ScrollView {
             content,
             rect: Rect::new(0, 0, 0, 0),
+            scale: 1.0,
+            offset_x: 0,
+            offset_y: 0,
         }))
     }
 
@@ -234,10 +248,34 @@ impl ScrollView {
         self.rect.set_width(w);
         self.rect.set_height(h);
     }
+
+    fn set_scale(&mut self, scale: f64) {
+        self.scale = scale;
+    }
+
+    fn contain(&mut self) {
+        self.set_scale(1.);
+    }
+
+    fn cover(&mut self) {
+        let w = self.rect.width();
+        let h = self.rect.height();
+        let mut r = 2.;
+        if let Some((img_w, img_h)) = self.content.borrow().get_img_size() {
+            let (w1, _) = Image::cover_size(img_w, img_h, w, h);
+            r = w1 as f64 / w as f64;
+        }
+        self.set_scale(r);
+    }
 }
 
 impl Display for ScrollView {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-        self.content.borrow().render(canvas, rect);
+        canvas.set_clip_rect(rect);
+        let r = Rect::from_center(rect.center(),
+                                  (rect.width() as f64 * self.scale) as u32,
+                                  (rect.height() as f64 * self.scale) as u32);
+        self.content.borrow().render(canvas, r);
+        canvas.set_clip_rect(None);
     }
 }
