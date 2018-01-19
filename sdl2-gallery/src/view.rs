@@ -215,6 +215,13 @@ impl Display for GalleryView {
         true
     }
     fn interact(&mut self) {
+        // update scrollview slide animation
+        {
+            let mut scrollview = self.curr.borrow_mut();
+            scrollview.update();
+        }
+
+        // check galleryview horizontal slide end
         let mut in_transition = !self.dragging && self.transition.is_some();
         if in_transition {
             if let Some(ref mut transition) = self.transition {
@@ -241,6 +248,8 @@ pub struct ScrollView {
     offset_y: i32,
     zoom_mode: bool,
     dragging: bool,
+    dx: f32,
+    dy: f32,
 }
 
 impl ScrollView {
@@ -253,6 +262,8 @@ impl ScrollView {
             offset_y: 0,
             zoom_mode: false,
             dragging: false,
+            dx: 0f32,
+            dy: 0f32,
         }))
     }
 
@@ -276,8 +287,9 @@ impl ScrollView {
             },
             &Event::FingerMotion { x, y, dx, dy, .. } => {
                 if self.dragging {
-                    self.offset_x += (dx * self.rect.width() as f32) as i32;
-                    self.offset_y += (dy * self.rect.height() as f32) as i32;
+                    let w = self.rect.width() as f32;
+                    let h = self.rect.height() as f32;
+                    self.move_by(dx * w, dy * h);
                 }
             },
             &Event::FingerUp {touch_id, .. } => {
@@ -287,8 +299,17 @@ impl ScrollView {
         }
     }
 
-    fn is_interactive(&self) -> bool {
-        false
+    fn update(&mut self) {
+        if self.dragging || self.dx.abs() < 0.00001 && self.dy.abs() < 0.00001 {
+            return;
+        }
+
+        println!("calc fric {} {}", self.dx, self.dy);
+        self.offset_x = self.offset_x + self.dx as i32;
+        self.offset_y = self.offset_y + self.dy as i32;
+        let friction = 1.0;
+        self.dx = apply_friction(friction, self.dx);
+        self.dy = apply_friction(friction, self.dy);
     }
 
     fn set_rect(&mut self, x: i32, y: i32, w: u32, h: u32) {
@@ -319,6 +340,16 @@ impl ScrollView {
         }
         self.set_scale(r);
     }
+
+    pub fn move_by(&mut self, x: f32, y: f32) {
+        self.dx = x;
+        self.dy = y;
+
+        let x = x as i32;
+        let y = y as i32;
+        self.offset_x += x;
+        self.offset_y += y;
+    }
 }
 
 impl Display for ScrollView {
@@ -329,5 +360,13 @@ impl Display for ScrollView {
                                   (rect.height() as f64 * self.scale) as u32);
         self.content.borrow().render(canvas, r);
         canvas.set_clip_rect(None);
+    }
+}
+
+fn apply_friction(friction: f32, dx: f32) -> f32 {
+    if dx.abs() < friction {
+        0f32
+    } else {
+        dx + (if dx > 0f32 {-friction} else {friction})
     }
 }
