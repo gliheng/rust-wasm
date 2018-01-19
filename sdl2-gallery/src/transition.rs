@@ -29,6 +29,9 @@ impl Transition {
             _ => false,
         }
     }
+    pub fn target_val(&self) -> i32 {
+        self.target_val
+    }
     pub fn step(&mut self) -> f64 {
         let mut t = Transition::to_f64(self.start_time.elapsed());
         let d = Transition::to_f64(self.duration);

@@ -12,6 +12,8 @@ use std::mem::drop;
 use transition::Transition;
 use gesture::{GestureDetector, GestureEvent};
 
+const GAP: i32 = 30;
+
 pub struct GalleryView {
     parent: Weak<RefCell<Scene>>,
     prev: Rc<RefCell<ScrollView>>,
@@ -26,7 +28,6 @@ pub struct GalleryView {
     img_idx: usize,
     transition: Option<Transition>,
     gesture_detector: GestureDetector,
-    zoom_mode: bool,
 }
 
 impl GalleryView {
@@ -54,7 +55,6 @@ impl GalleryView {
             img_idx: 0,
             transition: None,
             gesture_detector: GestureDetector::new(),
-            zoom_mode: false,
         };
         g.set_curr_image(0);
         Rc::new(RefCell::new(g))
@@ -65,11 +65,11 @@ impl GalleryView {
         let p = self.img_idx as isize - 1;
         if self.translate_x > 0 && p >= 0 {
             println!("rotate left");
-            self.translate_x -= self.width as i32;
+            self.translate_x -= self.width as i32 + GAP;
             self.set_curr_image(p as usize);
         } else if self.translate_x < 0 && self.img_idx + 1 < self.config.urls.len() {
             println!("rotate right");
-            self.translate_x += self.width as i32;
+            self.translate_x += self.width as i32 + GAP;
             let i = self.img_idx + 1;
             self.set_curr_image(i);
         }
@@ -120,7 +120,6 @@ impl GalleryView {
         }
         scrollview.set_scale(1.);
 
-        self.zoom_mode = false;
         self.img_idx = idx;
     }
 
@@ -135,7 +134,7 @@ impl Display for GalleryView {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         if self.translate_x > 0 {
             let mut r0 = rect.clone();
-            r0.offset(self.translate_x - self.width as i32, 0);
+            r0.offset(self.translate_x - self.width as i32 - GAP, 0);
             self.prev.borrow().render(canvas, r0);
         }
 
@@ -145,16 +144,41 @@ impl Display for GalleryView {
 
         if self.translate_x < 0 {
             let mut r2 = rect.clone();
-            r2.offset(self.translate_x + self.width as i32, 0);
+            r2.offset(self.translate_x + self.width as i32 + GAP, 0);
             self.next.borrow().render(canvas, r2);
         }
     }
     fn handle_events(&mut self, event: &Event) {
+        {
+            let mut scrollview = self.curr.borrow_mut();
+
+            self.gesture_detector.feed(event);
+            for event in &self.gesture_detector.poll() {
+                match event {
+                    &GestureEvent::DoubleTap => {
+                        if scrollview.zoom_mode {
+                            // exit zoom
+                            scrollview.exit_zoom();
+                        } else {
+                            scrollview.enter_zoom();
+                        }
+                    },
+                    _ => ()
+                }
+            }
+
+            if scrollview.zoom_mode {
+                scrollview.handle_events(event);
+                return;
+            }
+
+        }
+
+        // handle horizontal move
         match event {
             &Event::FingerDown { x, y, touch_id, .. } => {
                 self.dragging = true;
                 self.transition = None;
-                self.rotate();
                 self.translate_x_pre = self.translate_x;
             },
             &Event::FingerMotion { x, y, dx, dy, .. } => {
@@ -180,28 +204,11 @@ impl Display for GalleryView {
                     || mov == 1 && self.img_idx == 0 {
                         mov = 0;
                     }
-                let target_x = mov * self.width as i32;
+                let target_x = mov * (self.width as i32 + GAP);
                 println!("move: {}", mov);
                 self.move_to(target_x, Duration::from_millis(300));
             },
             _ => (),
-        }
-
-        self.gesture_detector.feed(event);
-        for event in &self.gesture_detector.poll() {
-            match event {
-                &GestureEvent::DoubleTap => {
-                    let mut scrollview = self.curr.borrow_mut();
-                    if self.zoom_mode {
-                        scrollview.contain();
-                        self.zoom_mode = false;
-                    } else {
-                        scrollview.cover();
-                        self.zoom_mode = true;
-                    }
-                },
-                _ => ()
-            }
         }
     }
     fn is_interactive(&self) -> bool {
@@ -213,11 +220,14 @@ impl Display for GalleryView {
             if let Some(ref mut transition) = self.transition {
                 self.translate_x = transition.step() as i32;
                 if transition.at_end() {
+                    // end transition
                     in_transition = false;
+                    // self.transition_x = transition.target_val();
                 }
             }
             if !in_transition {
                 self.transition = None;
+                self.rotate();
             }
         }
     }
@@ -229,6 +239,8 @@ pub struct ScrollView {
     scale: f64,
     offset_x: i32,
     offset_y: i32,
+    zoom_mode: bool,
+    dragging: bool,
 }
 
 impl ScrollView {
@@ -239,7 +251,44 @@ impl ScrollView {
             scale: 1.0,
             offset_x: 0,
             offset_y: 0,
+            zoom_mode: false,
+            dragging: false,
         }))
+    }
+
+    fn enter_zoom(&mut self) {
+        self.cover();
+        self.zoom_mode = true;
+    }
+
+    fn exit_zoom(&mut self) {
+        self.contain();
+        self.offset_x = 0;
+        self.offset_y = 0;
+        self.zoom_mode = false;
+    }
+
+    fn handle_events(&mut self, event: &Event) {
+        // handle drag
+        match event {
+            &Event::FingerDown { x, y, touch_id, .. } => {
+                self.dragging = true;
+            },
+            &Event::FingerMotion { x, y, dx, dy, .. } => {
+                if self.dragging {
+                    self.offset_x += (dx * self.rect.width() as f32) as i32;
+                    self.offset_y += (dy * self.rect.height() as f32) as i32;
+                }
+            },
+            &Event::FingerUp {touch_id, .. } => {
+                self.dragging = false;
+            },
+            _ => ()
+        }
+    }
+
+    fn is_interactive(&self) -> bool {
+        false
     }
 
     fn set_rect(&mut self, x: i32, y: i32, w: u32, h: u32) {
@@ -251,6 +300,9 @@ impl ScrollView {
 
     fn set_scale(&mut self, scale: f64) {
         self.scale = scale;
+        if scale == 1. {
+            self.zoom_mode = false;
+        }
     }
 
     fn contain(&mut self) {
@@ -272,7 +324,7 @@ impl ScrollView {
 impl Display for ScrollView {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         canvas.set_clip_rect(rect);
-        let r = Rect::from_center(rect.center(),
+        let r = Rect::from_center(rect.center().offset(self.offset_x, self.offset_y),
                                   (rect.width() as f64 * self.scale) as u32,
                                   (rect.height() as f64 * self.scale) as u32);
         self.content.borrow().render(canvas, r);

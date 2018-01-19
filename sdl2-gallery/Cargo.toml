@@ -12,4 +12,4 @@ lazy_static = "1.0.0"
 [dependencies.sdl2]
 version = "0.31.0"
 default-features = false
-features = ["gfx", "image", "unsafe_textures"]
+features = ["image", "unsafe_textures", "ttf"]

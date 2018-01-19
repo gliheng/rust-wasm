@@ -33,13 +33,19 @@ impl GestureDetector {
     pub fn feed(&mut self, evt: &Event) {
         match evt {
             &Event::FingerDown { x, y, touch_id, .. } => {
-                if x == self.last_x && y == self.last_y && self.last_tap_time.elapsed() < Duration::from_millis(500) {
+                // get distance between two points
+                let dist = ((x - self.last_x).powi(2) + (y - self.last_y).powi(2)).sqrt();
+                if dist < 10. && self.last_tap_time.elapsed() < Duration::from_millis(500) {
                     self.pool.push(GestureEvent::DoubleTap);
                 } else {
                     self.last_x = x;
                     self.last_y = y;
                     self.last_tap_time = Instant::now();
                 }
+            },
+            &Event::FingerMotion { x, y, touch_id, .. } => {
+                self.last_x = f32::NAN;
+                self.last_y = f32::NAN;
             },
             _ => ()
         }

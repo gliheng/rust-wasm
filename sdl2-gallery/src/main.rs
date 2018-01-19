@@ -18,11 +18,12 @@ mod gesture;
 
 use std::process;
 use stdweb::unstable::TryInto;
-use sdl2::pixels::Color;
+use sdl2::pixels::{Color, PixelFormatEnum};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::gfx::primitives::DrawRenderer;
+// use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::rect::Rect;
+use sdl2::ttf;
 use model::Gallery;
 use view::GalleryView;
 use display::{Scene, Display};
@@ -50,7 +51,7 @@ fn main() {
     gl_attr.set_multisample_samples(4);
 
     let window  = match video
-        .window("wasm-demo", width, height)
+        .window("wasm gallery", width, height)
         .position_centered()
         .opengl()
         .build() {
@@ -71,6 +72,17 @@ fn main() {
 
     scene.borrow_mut().add_child(GalleryView::new(scene.clone(), gallery, width, height));
 
+    let ttf_context = ttf::init().unwrap();
+    let mut font = None;
+    match ttf_context.load_font("./assets/Supermercado-Regular.ttf", 100) {
+        Ok(f) => {
+            font = Some(f);
+        },
+        Err(e) => {
+            println!("Cannot load font {:?}", e);
+        },
+    }
+    let creator = canvas.texture_creator();
     let mut frame_rate = FrameRate::new();
     let main_loop = || {
         frame_rate.tick();
@@ -88,7 +100,17 @@ fn main() {
         canvas.clear();
         scene.borrow().interact();
         scene.borrow().render(&mut canvas, Rect::new(0, 0, width, height));
-        let _ = canvas.string(10, 10, &frame_rate.get().to_string(), green);
+
+        if let Some(ref f) = font {
+            let n = frame_rate.mean().to_string();
+            let surf = f.render(&n).solid(green).unwrap();
+            let rect = Rect::new(0, 0, surf.width(), surf.height());
+            let tex = creator.create_texture_from_surface(surf).unwrap();
+            canvas.copy(&tex,
+                        rect,
+                        rect);
+        }
+        // let _ = canvas.string(10, 10, &frame_rate.get().to_string(), green);
         canvas.present();
     };
 
