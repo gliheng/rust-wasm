@@ -26,6 +26,7 @@ pub struct GalleryView {
     img_idx: usize,
     transition: Option<Transition>,
     gesture_detector: GestureDetector,
+    zoom_mode: bool,
 }
 
 impl GalleryView {
@@ -53,6 +54,7 @@ impl GalleryView {
             img_idx: 0,
             transition: None,
             gesture_detector: GestureDetector::new(),
+            zoom_mode: false,
         };
         g.set_curr_image(0);
         Rc::new(RefCell::new(g))
@@ -86,6 +88,7 @@ impl GalleryView {
         } else {
             img.set_src("");
         }
+        img.set_scale(1.);
 
         let scrollview = self.curr.borrow();
         let mut img = scrollview.content.borrow_mut();
@@ -96,6 +99,7 @@ impl GalleryView {
         } else {
             img.set_src("");
         }
+        img.set_scale(1.);
 
         let scrollview = self.next.borrow();
         let mut img = scrollview.content.borrow_mut();
@@ -105,6 +109,8 @@ impl GalleryView {
         } else {
             img.set_src("");
         }
+        img.set_scale(1.);
+
         self.img_idx = idx;
     }
 
@@ -134,15 +140,6 @@ impl Display for GalleryView {
         }
     }
     fn handle_events(&mut self, event: &Event) {
-        self.gesture_detector.feed(event);
-        for event in &self.gesture_detector.poll() {
-            match event {
-                &GestureEvent::DoubleTap => {
-                    println!("you doulbe taped!");
-                },
-                _ => ()
-            }
-        }
         match event {
             &Event::FingerDown { x, y, touch_id, .. } => {
                 self.dragging = true;
@@ -178,6 +175,25 @@ impl Display for GalleryView {
                 self.move_to(target_x, Duration::from_millis(300));
             },
             _ => (),
+        }
+
+        self.gesture_detector.feed(event);
+        for event in &self.gesture_detector.poll() {
+            match event {
+                &GestureEvent::DoubleTap => {
+                    println!("you doulbe taped!");
+                    let scrollview = self.curr.borrow();
+                    let mut img = scrollview.content.borrow_mut();
+                    if self.zoom_mode {
+                        img.set_scale(0.3);
+                        self.zoom_mode = false;
+                    } else {
+                        img.set_scale(2.);
+                        self.zoom_mode = true;
+                    }
+                },
+                _ => ()
+            }
         }
     }
     fn is_interactive(&self) -> bool {

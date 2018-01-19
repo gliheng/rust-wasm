@@ -201,7 +201,7 @@ Module.expectedDataFileDownloads++;
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "2c36c1e9-fc9a-4e57-a336-28341e1da2a5"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "50d4682d-7b41-4e0f-bd89-7384c1ca4621"});
 
 })();
 
@@ -1981,7 +1981,7 @@ function _emscripten_asm_const_iiiii(code, a0, a1, a2, a3) {
 
 STATIC_BASE = GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 163824;
+STATICTOP = STATIC_BASE + 164096;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -1990,7 +1990,7 @@ STATICTOP = STATIC_BASE + 163824;
 
 
 
-var STATIC_BUMP = 163824;
+var STATIC_BUMP = 164096;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -10364,9 +10364,9 @@ function nullFunc_viiiiiiiii(x) { Module["printErr"]("Invalid function pointer c
 
 function nullFunc_viiiiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-Module['wasmTableSize'] = 74240;
+Module['wasmTableSize'] = 75776;
 
-Module['wasmMaxTableSize'] = 74240;
+Module['wasmMaxTableSize'] = 75776;
 
 function invoke_i(index) {
   try {

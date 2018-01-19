@@ -78,6 +78,7 @@ pub struct Image {
     src: String,
     w: u32,
     h: u32,
+    scale: f64,
 }
 
 impl Image {
@@ -101,6 +102,7 @@ impl Image {
             src,
             w,
             h,
+            ..Default::default()
         }))
     }
     pub fn set_src(&mut self, src: &str) {
@@ -109,15 +111,30 @@ impl Image {
             load_img(src);
         }
     }
+    pub fn set_scale(&mut self, scale: f64) {
+        self.scale = scale;
+    }
 }
 
 impl Display for Image {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         let m = LOAD_REGISTER.lock().unwrap();
-        if let Some(&SizedTexture(w, h, ref tex)) = m.get(&self.src) {
+        if let Some(&SizedTexture(img_w, img_h, ref tex)) = m.get(&self.src) {
+            let img_r = img_w as f64 / img_h as f64;
+            let r = rect.width() as f64 / rect.height() as f64;
+            let s_rect = Rect::new(0, 0, img_w, img_h);
+            let t_rect = if img_r > r {
+                let w = rect.width();
+                let h = (img_h as f64 / img_w as f64 * rect.width() as f64) as u32;
+                Rect::new(rect.x(), (rect.height() as i32 - h as i32) / 2 + rect.y(), w, h)
+            } else {
+                let w = (img_w as f64 / img_h as f64 * rect.height() as f64) as u32;
+                let h = rect.height();
+                Rect::new((rect.width() as i32 - w as i32) / 2 + rect.x(), rect.y(), w, h)
+            };
             let _ = canvas.copy(tex,
-                                Rect::new(0, 0, w, h),
-                                rect);
+                                s_rect,
+                                t_rect);
         }
     }
 }
@@ -130,6 +147,7 @@ impl Default for Image {
             src: "".to_string(),
             w: 0,
             h: 0,
+            scale: 1.0,
         }
     }
 }
