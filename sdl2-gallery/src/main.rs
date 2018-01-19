@@ -13,6 +13,7 @@ mod utils;
 mod display;
 mod model;
 mod view;
+mod transition;
 
 use std::process;
 use stdweb::unstable::TryInto;
