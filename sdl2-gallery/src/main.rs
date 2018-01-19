@@ -14,6 +14,7 @@ mod display;
 mod model;
 mod view;
 mod transition;
+mod gesture;
 
 use std::process;
 use stdweb::unstable::TryInto;

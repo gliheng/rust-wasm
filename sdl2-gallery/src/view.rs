@@ -10,6 +10,7 @@ use std::cell::RefCell;
 use std::time::{Duration};
 use std::mem::drop;
 use transition::Transition;
+use gesture::{GestureDetector, GestureEvent};
 
 pub struct GalleryView {
     parent: Weak<RefCell<Scene>>,
@@ -24,6 +25,7 @@ pub struct GalleryView {
     translate_x_pre: i32,
     img_idx: usize,
     transition: Option<Transition>,
+    gesture_detector: GestureDetector,
 }
 
 impl GalleryView {
@@ -50,6 +52,7 @@ impl GalleryView {
             translate_x_pre: 0,
             img_idx: 0,
             transition: None,
+            gesture_detector: GestureDetector::new(),
         };
         g.set_curr_image(0);
         Rc::new(RefCell::new(g))
@@ -131,6 +134,15 @@ impl Display for GalleryView {
         }
     }
     fn handle_events(&mut self, event: &Event) {
+        self.gesture_detector.feed(event);
+        for event in &self.gesture_detector.poll() {
+            match event {
+                &GestureEvent::DoubleTap => {
+                    println!("you doulbe taped!");
+                },
+                _ => ()
+            }
+        }
         match event {
             &Event::FingerDown { x, y, touch_id, .. } => {
                 self.dragging = true;

@@ -201,7 +201,7 @@ Module.expectedDataFileDownloads++;
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "da40e0a2-6e51-496f-bdb5-a19d919f1633"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/icon.png"}], "remote_package_size": 143139, "package_uuid": "2c36c1e9-fc9a-4e57-a336-28341e1da2a5"});
 
 })();
 
@@ -1917,13 +1917,13 @@ integrateWasmJS();
 
 // === Body ===
 
-var ASM_CONSTS = [function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientWidth ;})()); },
- function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientHeight ;})()); },
- function($0, $1, $2) { $1 = Module.STDWEB.to_js($1);$2 = Module.STDWEB.to_js($2);Module.STDWEB.from_js($0, (function(){var cbk = ($1); fetch (($2)). then (rsp => rsp.arrayBuffer ()). then (ab => new Uint8Array (ab)). then (function (buf){cbk (buf);});})()); },
- function($0) { Module.STDWEB.increment_refcount( $0 ); },
+var ASM_CONSTS = [function($0) { Module.STDWEB.increment_refcount( $0 ); },
  function($0) { Module.STDWEB.decrement_refcount( $0 ); },
  function($0) { Module.STDWEB.tmp = Module.STDWEB.to_js( $0 ); },
+ function($0, $1, $2) { $1 = Module.STDWEB.to_js($1);$2 = Module.STDWEB.to_js($2);Module.STDWEB.from_js($0, (function(){var cbk = ($1); fetch (($2)). then (rsp => rsp.arrayBuffer ()). then (ab => new Uint8Array (ab)). then (function (buf){cbk (buf);});})()); },
  function($0) { Module.STDWEB.from_js($0, (function(){return Module.gallery ;})()); },
+ function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientWidth ;})()); },
+ function($0) { Module.STDWEB.from_js($0, (function(){return document.body.clientHeight ;})()); },
  function($0, $1) { $0 = Module.STDWEB.to_js($0);$1 = Module.STDWEB.to_js($1);var array = ($0); var pointer = ($1); HEAPU8.set (array , pointer); },
  function($0, $1) { $1 = Module.STDWEB.to_js($1);Module.STDWEB.from_js($0, (function(){return ($1). length ;})()); },
  function($0) { return (Module.STDWEB.acquire_js_reference( $0 ) instanceof Uint8Array) | 0; },
@@ -1981,7 +1981,7 @@ function _emscripten_asm_const_iiiii(code, a0, a1, a2, a3) {
 
 STATIC_BASE = GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 163760;
+STATICTOP = STATIC_BASE + 163824;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -1990,7 +1990,7 @@ STATICTOP = STATIC_BASE + 163760;
 
 
 
-var STATIC_BUMP = 163760;
+var STATIC_BUMP = 163824;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -10364,9 +10364,9 @@ function nullFunc_viiiiiiiii(x) { Module["printErr"]("Invalid function pointer c
 
 function nullFunc_viiiiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-Module['wasmTableSize'] = 74752;
+Module['wasmTableSize'] = 74240;
 
-Module['wasmMaxTableSize'] = 74752;
+Module['wasmMaxTableSize'] = 74240;
 
 function invoke_i(index) {
   try {
