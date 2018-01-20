@@ -214,7 +214,7 @@ impl Display for GalleryView {
     fn is_interactive(&self) -> bool {
         true
     }
-    fn interact(&mut self) {
+    fn update(&mut self) {
         // update scrollview slide animation
         {
             let mut scrollview = self.curr.borrow_mut();
@@ -246,6 +246,8 @@ pub struct ScrollView {
     scale: f64,
     offset_x: i32,
     offset_y: i32,
+    offset_x_limit: u32,
+    offset_y_limit: u32,
     zoom_mode: bool,
     dragging: bool,
     dx: f32,
@@ -260,6 +262,8 @@ impl ScrollView {
             scale: 1.0,
             offset_x: 0,
             offset_y: 0,
+            offset_x_limit: 0,
+            offset_y_limit: 0,
             zoom_mode: false,
             dragging: false,
             dx: 0f32,
@@ -304,9 +308,10 @@ impl ScrollView {
             return;
         }
 
-        println!("calc fric {} {}", self.dx, self.dy);
-        self.offset_x = self.offset_x + self.dx as i32;
-        self.offset_y = self.offset_y + self.dy as i32;
+        let offset_x = self.offset_x + self.dx as i32;
+        let offset_y = self.offset_y + self.dy as i32;
+        self.set_pos(offset_x, offset_y);
+
         let friction = 1.0;
         self.dx = apply_friction(friction, self.dx);
         self.dy = apply_friction(friction, self.dy);
@@ -335,20 +340,50 @@ impl ScrollView {
         let h = self.rect.height();
         let mut r = 2.;
         if let Some((img_w, img_h)) = self.content.borrow().get_img_size() {
-            let (w1, _) = Image::cover_size(img_w, img_h, w, h);
+            let (w1, h1) = Image::cover_size(img_w, img_h, w, h);
             r = w1 as f64 / w as f64;
+
+            self.offset_x_limit = ((w1 as f64 * self.scale - w as f64) / 2.) as u32;
+            self.offset_y_limit = ((h1 as f64 * self.scale - h as f64) / 2.) as u32;
+            println!("limit {} {}", self.offset_x_limit, self.offset_y_limit);
         }
         self.set_scale(r);
     }
 
-    pub fn move_by(&mut self, x: f32, y: f32) {
-        self.dx = x;
-        self.dy = y;
+    fn set_pos(&mut self, mut x: i32, mut y: i32) {
+        let offset_x_limit = self.offset_x_limit as i32;
+        if x > offset_x_limit {
+            x = offset_x_limit;
+        } else if x < -offset_x_limit {
+            x = -offset_x_limit;
+        }
+        self.offset_x = x;
 
-        let x = x as i32;
-        let y = y as i32;
-        self.offset_x += x;
-        self.offset_y += y;
+        let offset_y_limit = self.offset_y_limit as i32;
+        if y > offset_y_limit {
+            y = offset_y_limit;
+        } else if y < -offset_y_limit {
+            y = -offset_y_limit;
+        }
+        self.offset_y = y;
+    }
+
+    pub fn move_by(&mut self, x: f32, y: f32) {
+        let offset_x = self.offset_x + x as i32;
+        let offset_y = self.offset_y + y as i32;
+        self.set_pos(offset_x, offset_y);
+
+        if self.offset_x_limit == self.offset_x.abs() as u32 {
+            self.dx = 0.;
+        } else {
+            self.dx = x;
+        }
+
+        if self.offset_y_limit == self.offset_y.abs() as u32 {
+            self.dy = 0.;
+        } else {
+            self.dy = x;
+        }
     }
 }
 

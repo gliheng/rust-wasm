@@ -36,7 +36,7 @@ impl FrameRate {
     pub fn new() -> Self {
         FrameRate {
             times: VecDeque::with_capacity(100),
-            mean: Mean::new(10usize)
+            mean: Mean::new(5usize)
         }
     }
 

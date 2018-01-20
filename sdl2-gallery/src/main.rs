@@ -98,7 +98,7 @@ fn main() {
         }
         canvas.set_draw_color(black);
         canvas.clear();
-        scene.borrow().interact();
+        scene.borrow().update();
         scene.borrow().render(&mut canvas, Rect::new(0, 0, width, height));
 
         if let Some(ref f) = font {
