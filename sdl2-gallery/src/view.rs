@@ -11,6 +11,7 @@ use std::time::{Duration};
 use std::mem::drop;
 use transition::Transition;
 use gesture::{GestureDetector, GestureEvent};
+use utils::mean::Mean;
 
 const GAP: i32 = 30;
 
@@ -243,15 +244,17 @@ impl Display for GalleryView {
 pub struct ScrollView {
     pub content: Rc<RefCell<Image>>,
     rect: Rect,
-    scale: f64,
-    offset_x: i32,
-    offset_y: i32,
-    offset_x_limit: u32,
-    offset_y_limit: u32,
+    scale: f32,
+    offset_x: f32,
+    offset_y: f32,
+    offset_x_limit: f32,
+    offset_y_limit: f32,
     zoom_mode: bool,
     dragging: bool,
     dx: f32,
     dy: f32,
+    mean_x: Mean<f32>,
+    mean_y: Mean<f32>,
 }
 
 impl ScrollView {
@@ -260,14 +263,16 @@ impl ScrollView {
             content,
             rect: Rect::new(0, 0, 0, 0),
             scale: 1.0,
-            offset_x: 0,
-            offset_y: 0,
-            offset_x_limit: 0,
-            offset_y_limit: 0,
+            offset_x: 0.,
+            offset_y: 0.,
+            offset_x_limit: 0.,
+            offset_y_limit: 0.,
             zoom_mode: false,
             dragging: false,
-            dx: 0f32,
-            dy: 0f32,
+            dx: 0.,
+            dy: 0.,
+            mean_x: Mean::new(5),
+            mean_y: Mean::new(5),
         }))
     }
 
@@ -278,8 +283,8 @@ impl ScrollView {
 
     fn exit_zoom(&mut self) {
         self.contain();
-        self.offset_x = 0;
-        self.offset_y = 0;
+        self.offset_x = 0.;
+        self.offset_y = 0.;
         self.zoom_mode = false;
     }
 
@@ -308,8 +313,8 @@ impl ScrollView {
             return;
         }
 
-        let offset_x = self.offset_x + self.dx as i32;
-        let offset_y = self.offset_y + self.dy as i32;
+        let offset_x = self.offset_x + self.dx;
+        let offset_y = self.offset_y + self.dy;
         self.set_pos(offset_x, offset_y);
 
         let friction = 1.0;
@@ -324,7 +329,7 @@ impl ScrollView {
         self.rect.set_height(h);
     }
 
-    fn set_scale(&mut self, scale: f64) {
+    fn set_scale(&mut self, scale: f32) {
         self.scale = scale;
         if scale == 1. {
             self.zoom_mode = false;
@@ -341,17 +346,19 @@ impl ScrollView {
         let mut r = 2.;
         if let Some((img_w, img_h)) = self.content.borrow().get_img_size() {
             let (w1, h1) = Image::cover_size(img_w, img_h, w, h);
-            r = w1 as f64 / w as f64;
+            r = w1 as f32 / w as f32;
 
-            self.offset_x_limit = ((w1 as f64 * self.scale - w as f64) / 2.) as u32;
-            self.offset_y_limit = ((h1 as f64 * self.scale - h as f64) / 2.) as u32;
-            println!("limit {} {}", self.offset_x_limit, self.offset_y_limit);
+            self.offset_x_limit = (w1 as f32 * self.scale - w as f32) / 2.;
+            self.offset_y_limit = (h1 as f32 * self.scale - h as f32) / 2.;
+            println!("scroll limit {} {}", self.offset_x_limit, self.offset_y_limit);
         }
         self.set_scale(r);
     }
 
-    fn set_pos(&mut self, mut x: i32, mut y: i32) {
-        let offset_x_limit = self.offset_x_limit as i32;
+    fn set_pos(&mut self, mut x: f32, mut y: f32) {
+        let offset_x_limit = self.offset_x_limit;
+        let offset_y_limit = self.offset_y_limit;
+
         if x > offset_x_limit {
             x = offset_x_limit;
         } else if x < -offset_x_limit {
@@ -359,7 +366,6 @@ impl ScrollView {
         }
         self.offset_x = x;
 
-        let offset_y_limit = self.offset_y_limit as i32;
         if y > offset_y_limit {
             y = offset_y_limit;
         } else if y < -offset_y_limit {
@@ -368,21 +374,24 @@ impl ScrollView {
         self.offset_y = y;
     }
 
-    pub fn move_by(&mut self, x: f32, y: f32) {
-        let offset_x = self.offset_x + x as i32;
-        let offset_y = self.offset_y + y as i32;
+    pub fn move_by(&mut self, dx: f32, dy: f32) {
+        let offset_x = self.offset_x + dx;
+        let offset_y = self.offset_y + dy;
         self.set_pos(offset_x, offset_y);
 
-        if self.offset_x_limit == self.offset_x.abs() as u32 {
+        self.mean_x.push(dx);
+        self.mean_y.push(dy);
+
+        if self.offset_x_limit == self.offset_x.abs() {
             self.dx = 0.;
         } else {
-            self.dx = x;
+            self.dx = self.mean_x.get();
         }
 
-        if self.offset_y_limit == self.offset_y.abs() as u32 {
+        if self.offset_y_limit == self.offset_y.abs() {
             self.dy = 0.;
         } else {
-            self.dy = x;
+            self.dy = self.mean_y.get();
         }
     }
 }
@@ -390,9 +399,9 @@ impl ScrollView {
 impl Display for ScrollView {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         canvas.set_clip_rect(rect);
-        let r = Rect::from_center(rect.center().offset(self.offset_x, self.offset_y),
-                                  (rect.width() as f64 * self.scale) as u32,
-                                  (rect.height() as f64 * self.scale) as u32);
+        let r = Rect::from_center(rect.center().offset(self.offset_x as i32, self.offset_y as i32),
+                                  (rect.width() as f32 * self.scale) as u32,
+                                  (rect.height() as f32 * self.scale) as u32);
         self.content.borrow().render(canvas, r);
         canvas.set_clip_rect(None);
     }

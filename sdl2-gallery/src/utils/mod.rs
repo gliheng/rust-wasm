@@ -1,3 +1,5 @@
+pub mod mean;
+
 use stdweb::unstable::TryInto;
 use stdweb::web::TypedArray;
 use stdweb::Once;
@@ -29,3 +31,4 @@ pub fn fetch<F> (url: &str, cbk: F)
             });
     };
 }
+

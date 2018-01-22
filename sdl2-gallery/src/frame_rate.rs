@@ -1,42 +1,17 @@
-use std::collections::VecDeque;
 use std::time::{Instant, Duration};
-
-struct Mean {
-    histroy: VecDeque<u8>,
-    total: u32 // we get a total, divide by n to get a mean
-}
-
-impl Mean {
-    fn new(capacity: usize) -> Self {
-        Mean {
-            histroy: VecDeque::with_capacity(capacity),
-            total: 0
-        }
-    }
-    fn push(&mut self, n: u8) {
-        if self.histroy.len() == self.histroy.capacity() {
-            if let Some(n) = self.histroy.pop_front() {
-                self.total -= n as u32;
-            }
-        }
-        self.histroy.push_back(n);
-        self.total += n as u32;
-    }
-    fn get(&self) -> u32 {
-        self.total / self.histroy.len() as u32
-    }
-}
+use std::collections::VecDeque;
+use utils::mean::Mean;
 
 pub struct FrameRate {
     times: VecDeque<Instant>,
-    mean: Mean
+    mean: Mean<u32>
 }
 
 impl FrameRate {
     pub fn new() -> Self {
         FrameRate {
             times: VecDeque::with_capacity(100),
-            mean: Mean::new(5usize)
+            mean: Mean::new(5)
         }
     }
 
@@ -52,9 +27,9 @@ impl FrameRate {
     }
 
     /// Get the average framerate over the previous samples
-    pub fn mean(&mut self) -> u8 {
-        self.mean.push(self.times.len() as u8);
-        self.mean.get() as u8
+    pub fn mean(&mut self) -> u32 {
+        self.mean.push(self.times.len() as u32);
+        self.mean.get() as u32
     }
 
     /// Get the current framerate
