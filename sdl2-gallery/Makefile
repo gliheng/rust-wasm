@@ -10,3 +10,6 @@ all:
 
 server:
 	cd $(OUTPUT) && python3 -m http.server
+
+clean:
+	rm static/app.js static/sdl2_gallery.wasm

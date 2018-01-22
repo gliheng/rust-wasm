@@ -310,6 +310,9 @@ impl ScrollView {
 
     fn update(&mut self) {
         if self.dragging || self.dx.abs() < 0.00001 && self.dy.abs() < 0.00001 {
+            self.dx = 0.;
+            self.dy = 0.;
+            // slide stopped
             return;
         }
 
@@ -317,7 +320,7 @@ impl ScrollView {
         let offset_y = self.offset_y + self.dy;
         self.set_pos(offset_x, offset_y);
 
-        let friction = 1.0;
+        let friction = 0.7;
         self.dx = apply_friction(friction, self.dx);
         self.dy = apply_friction(friction, self.dy);
     }
@@ -385,13 +388,13 @@ impl ScrollView {
         if self.offset_x_limit == self.offset_x.abs() {
             self.dx = 0.;
         } else {
-            self.dx = self.mean_x.get();
+            self.dx = self.mean_x.get() as f32;
         }
 
         if self.offset_y_limit == self.offset_y.abs() {
             self.dy = 0.;
         } else {
-            self.dy = self.mean_y.get();
+            self.dy = self.mean_y.get() as f32;
         }
     }
 }

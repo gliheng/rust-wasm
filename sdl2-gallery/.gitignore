@@ -1,2 +1,4 @@
 target/
 **/*.rs.bk
+static/app.js
+static/sdl2_gallery.wasm
