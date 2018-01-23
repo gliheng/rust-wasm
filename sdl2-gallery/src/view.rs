@@ -1,3 +1,6 @@
+// TODO this can be dropped
+// translate_x to f32
+
 use display::{Image, Scene};
 use model::Gallery;
 use display::Display;
@@ -86,13 +89,12 @@ impl GalleryView {
             if i < 0 {
                 img.set_src("");
             } else if let Some(url) = self.config.urls.get(i as usize) {
-                println!("set prev {}", i);
                 img.set_src(url);
             } else {
                 img.set_src("");
             }
         }
-        scrollview.set_scale(1.);
+        scrollview.reset();
 
         //  set curr scrollview
         let mut scrollview = self.curr.borrow_mut();
@@ -100,26 +102,23 @@ impl GalleryView {
             let mut img = scrollview.content.borrow_mut();
             if let Some(url) = self.config.urls.get(idx) {
                 img.set_src(url);
-                println!("set curr {}", idx);
-
             } else {
                 img.set_src("");
             }
         }
-        scrollview.set_scale(1.);
+        scrollview.reset();
 
         //  set next scrollview
         let mut scrollview = self.next.borrow_mut();
         {
             let mut img = scrollview.content.borrow_mut();
             if let Some(url) = self.config.urls.get(idx + 1) {
-                println!("set next {}", idx+1);
                 img.set_src(url);
             } else {
                 img.set_src("");
             }
         }
-        scrollview.set_scale(1.);
+        scrollview.reset();
 
         self.img_idx = idx;
     }
@@ -167,49 +166,64 @@ impl Display for GalleryView {
                     _ => ()
                 }
             }
-
-            if scrollview.zoom_mode {
-                scrollview.handle_events(event);
-                return;
-            }
-
         }
 
         // handle horizontal move
-        match event {
-            &Event::FingerDown { x, y, touch_id, .. } => {
-                self.dragging = true;
-                self.transition = None;
-                self.translate_x_pre = self.translate_x;
-            },
-            &Event::FingerMotion { x, y, dx, dy, .. } => {
-                if self.dragging {
-                    self.translate_x += (self.width as f32 * dx) as i32;
-                }
-            },
-            &Event::FingerUp {touch_id, .. } => {
-                self.dragging = false;
-                // move direction: -1 to left, 1 to right, 0 restore
-                let delta = self.translate_x - self.translate_x_pre;
-                let threshold = 150; // threshold for the move
-                let mut mov = if delta > threshold {
-                    1
-                } else if delta < -threshold {
-                    -1
-                } else {
-                    0
-                };
+        {
+            match event {
+                &Event::FingerDown { x, y, touch_id, .. } => {
+                    self.dragging = true;
+                    self.transition = None;
+                    self.translate_x_pre = self.translate_x;
+                },
+                &Event::FingerMotion { x, y, mut dx, mut dy, .. } => {
+                    dx = dx * self.width as f32;
+                    dy = dy * self.height as f32;
 
-                // avoid invalid move
-                if mov == -1 && self.img_idx >= self.config.urls.len() - 1
-                    || mov == 1 && self.img_idx == 0 {
-                        mov = 0;
+                    let mut scrollview = self.curr.borrow_mut();
+                    // if move is in opposite direction with outer tranlation
+                    // let out consume minimal move to to restore outer position to 0
+                    if self.translate_x > 0 && dx < 0. || self.translate_x < 0 && dx > 0. {
+                        let moved = dx.signum() * dx.abs().min((self.translate_x as f32).abs());
+                        // move outer
+                        self.translate_x += moved as i32;
+                        dx -= moved;
                     }
-                let target_x = mov * (self.width as i32 + GAP);
-                println!("move: {}", mov);
-                self.move_to(target_x, Duration::from_millis(300));
-            },
-            _ => (),
+
+                    // then inner accept remaining move
+                    if scrollview.zoom_mode {
+                        // move inner
+                        let remain = scrollview.move_by(dx, dy);
+                        dx = remain.0;
+                    }
+
+                    // outer again accept remaining move
+                    self.translate_x += dx as i32;
+                },
+                &Event::FingerUp {touch_id, .. } => {
+                    self.dragging = false;
+                    // move direction: -1 to left, 1 to right, 0 restore
+                    let delta = self.translate_x - self.translate_x_pre;
+                    let threshold = 150; // threshold for the move
+                    let mut mov = if delta > threshold {
+                        1
+                    } else if delta < -threshold {
+                        -1
+                    } else {
+                        0
+                    };
+
+                    // avoid invalid move
+                    if mov == -1 && self.img_idx >= self.config.urls.len() - 1
+                        || mov == 1 && self.img_idx == 0 {
+                            mov = 0;
+                        }
+                    let target_x = mov * (self.width as i32 + GAP);
+                    println!("move: {}", mov);
+                    self.move_to(target_x, Duration::from_millis(300));
+                },
+                _ => (),
+            }
         }
     }
     fn is_interactive(&self) -> bool {
@@ -217,9 +231,11 @@ impl Display for GalleryView {
     }
     fn update(&mut self) {
         // update scrollview slide animation
-        {
+        if !self.dragging {
             let mut scrollview = self.curr.borrow_mut();
-            scrollview.update();
+            if scrollview.zoom_mode {
+                scrollview.update();
+            }
         }
 
         // check galleryview horizontal slide end
@@ -276,6 +292,12 @@ impl ScrollView {
         }))
     }
 
+    pub fn reset(&mut self) {
+        self.set_scale(1.);
+        self.offset_x = 0.;
+        self.offset_y = 0.;
+    }
+
     fn enter_zoom(&mut self) {
         self.cover();
         self.zoom_mode = true;
@@ -288,28 +310,8 @@ impl ScrollView {
         self.zoom_mode = false;
     }
 
-    fn handle_events(&mut self, event: &Event) {
-        // handle drag
-        match event {
-            &Event::FingerDown { x, y, touch_id, .. } => {
-                self.dragging = true;
-            },
-            &Event::FingerMotion { x, y, dx, dy, .. } => {
-                if self.dragging {
-                    let w = self.rect.width() as f32;
-                    let h = self.rect.height() as f32;
-                    self.move_by(dx * w, dy * h);
-                }
-            },
-            &Event::FingerUp {touch_id, .. } => {
-                self.dragging = false;
-            },
-            _ => ()
-        }
-    }
-
     fn update(&mut self) {
-        if self.dragging || self.dx.abs() < 0.00001 && self.dy.abs() < 0.00001 {
+        if self.dx.abs() < 0.00001 && self.dy.abs() < 0.00001 {
             self.dx = 0.;
             self.dy = 0.;
             // slide stopped
@@ -359,6 +361,8 @@ impl ScrollView {
     }
 
     fn set_pos(&mut self, mut x: f32, mut y: f32) {
+        let mut x_limited = true;
+        let mut y_limited = true;
         let offset_x_limit = self.offset_x_limit;
         let offset_y_limit = self.offset_y_limit;
 
@@ -366,6 +370,8 @@ impl ScrollView {
             x = offset_x_limit;
         } else if x < -offset_x_limit {
             x = -offset_x_limit;
+        } else {
+            x_limited = false;
         }
         self.offset_x = x;
 
@@ -373,15 +379,18 @@ impl ScrollView {
             y = offset_y_limit;
         } else if y < -offset_y_limit {
             y = -offset_y_limit;
+        } else {
+            y_limited = false;
         }
         self.offset_y = y;
     }
 
-    pub fn move_by(&mut self, dx: f32, dy: f32) {
+    pub fn move_by(&mut self, dx: f32, dy: f32) -> (f32, f32) {
         let offset_x = self.offset_x + dx;
         let offset_y = self.offset_y + dy;
         self.set_pos(offset_x, offset_y);
 
+        // get a mean to calc motion speed
         self.mean_x.push(dx);
         self.mean_y.push(dy);
 
@@ -396,6 +405,7 @@ impl ScrollView {
         } else {
             self.dy = self.mean_y.get() as f32;
         }
+        (offset_x - self.offset_x, offset_y - self.offset_y)
     }
 }
 

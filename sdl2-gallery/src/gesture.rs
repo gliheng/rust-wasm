@@ -70,8 +70,8 @@ impl GestureDetector {
             },
             &Event::FingerUp { x, y, touch_id, .. } => {
             },
-            &Event::MultiGesture {d_dist, d_theta, ..} => {
-                println!("pinched: {} {}", d_dist, d_theta);
+            &Event::MultiGesture {x, y, d_dist, d_theta, ..} => {
+                println!("multigesture: x {} y {} dist {} theta {}", x, y, d_dist, d_theta);
             },
             _ => ()
         }
