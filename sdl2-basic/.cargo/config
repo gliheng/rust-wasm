@@ -1,4 +1,4 @@
 [target.wasm32-unknown-emscripten]
 rustflags = [
-    "-Clink-args=../../SDL2_gfx-1.0.3/.libs/libSDL2_gfx.so --use-preload-plugins --preload-file icon.png -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s ASSERTIONS=1",
+    "-Clink-args=../../SDL2_gfx-1.0.3/.libs/libSDL2_gfx.so --use-preload-plugins --preload-file assets -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s ASSERTIONS=1",
 ]

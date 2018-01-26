@@ -38,7 +38,7 @@ fn main() {
         .unwrap();
 
     let tc = canvas.texture_creator();
-    let texture = tc.load_texture(Path::new("icon.png")).expect("Cannot load image");
+    let texture = tc.load_texture(Path::new("assets/icon.png")).expect("Cannot load image");
 
     let black = Color::RGB(0, 0, 0);
     let white = Color::RGB(255, 255, 255);

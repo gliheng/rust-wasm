@@ -1,4 +1,0 @@
-[target.wasm32-unknown-emscripten]
-rustflags = [
-    "-Clink-args=-s EXPORTED_FUNCTIONS=['_rust_pow','_hello','_draw'] -s ASSERTIONS=1",
-]
