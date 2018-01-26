@@ -202,7 +202,7 @@ Module['FS_createPath']('/', 'assets', true, true);
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/assets/icon.png"}], "remote_package_size": 143139, "package_uuid": "8cf7ce6a-4fce-4785-826c-f3c488db1ae7"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 143139, "filename": "/assets/icon.png"}], "remote_package_size": 143139, "package_uuid": "354a9a43-33db-4e54-a021-6a15c3be8553"});
 
 })();
 
