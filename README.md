@@ -3,6 +3,8 @@ This repo contains examples on using rust with webassembly.
 Most examples contains Makefile for compilation. Run `make` to build.
 Run `make server` to run a local server, and open `http://localhost:8000`
 
+These examples are built using emscripten *v1.37.28*.
+
 ### hello-world
 Basic hello wolrd example. Output through console.
 
@@ -12,17 +14,22 @@ Use asmjs as compilation target, run in nodejs.
 ### dom
 Use `stdweb` crate to interact with the dom.
 
-### interop
-js and rust interop
+### ffi
+js and rust interop.
+
+### emscripten-api
+Showing how to use emscripten api in rust, using C extern.
 
 ### file-read
-Read a local file, also make it work on webassembly.
+Read a local file, count occurcy of each words.
 
 ### sdl2-basic
 Draw some basic shapes, images using sdl2. Make it run both as native and web.
 
-### sdl2-events
-Create interactions with sdl2.
+### sdl2-drag
+A draggable box using sdl2. This demo works on both web and pc.
+On web, it accepts both touch events and mouse events.
+Native app can be run with `cargo run`.
 
-
-More to be added.
+### sdl2-gallery
+A web gallery app using sdl2 & sdl2_ttf.
