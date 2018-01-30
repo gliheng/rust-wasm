@@ -208,7 +208,7 @@ impl Display for GalleryView {
                         self.dragging = false;
                         // move direction: -1 to left, 1 to right, 0 restore
                         let delta = self.translate_x - self.translate_x_pre;
-                        let threshold = 100; // threshold for the move
+                        let threshold = 50; // threshold for the move
                         let mut mov = if delta > threshold {
                             1
                         } else if delta < -threshold {
@@ -236,7 +236,9 @@ impl Display for GalleryView {
             match evt {
                 // pinch gesture
                 &Event::MultiGesture {x, y, d_dist, ..} => {
-                    scrollview.scale_by(x, y, d_dist * 5.);
+                    scrollview.scale_by(x * self.width as f32,
+                                        y * self.height as f32,
+                                        d_dist * 5.);
                 },
                 _ => ()
             }
@@ -282,9 +284,9 @@ pub struct ScrollView {
     offset_x_limit: f32,
     offset_y_limit: f32,
     zoom_mode: bool,
-    dragging: bool,
     dx: f32,
     dy: f32,
+    // these mean are to track mean move speed
     mean_x: Mean<f32>,
     mean_y: Mean<f32>,
 }
@@ -300,11 +302,10 @@ impl ScrollView {
             offset_x_limit: 0.,
             offset_y_limit: 0.,
             zoom_mode: false,
-            dragging: false,
             dx: 0.,
             dy: 0.,
-            mean_x: Mean::new(5),
-            mean_y: Mean::new(5),
+            mean_x: Mean::new(3),
+            mean_y: Mean::new(3),
         }))
     }
 
@@ -386,7 +387,10 @@ impl ScrollView {
             let (w2, _) = Image::contain_size(img_w, img_h, w, h);
             r = w1 as f32 / w2 as f32;
         }
+
         self.set_scale(r);
+        self.dx = 0.;
+        self.dy = 0.;
     }
 
     fn set_pos(&mut self, mut x: f32, mut y: f32) {
