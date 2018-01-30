@@ -328,7 +328,7 @@ impl ScrollView {
 
     fn scale_by(&mut self, x: f32, y: f32, d: f32) {
         let r = self.scale;
-        self.set_scale(r + d);
+        self.set_scale((r + d).max(0.1));
     }
 
     fn update(&mut self) {

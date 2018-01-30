@@ -62,13 +62,13 @@ trait Detector {
 }
 
 pub struct DoubleTapDetector {
-    first_tap: Option<Event>,
+    prev_finger_down: Option<Event>,
 }
 
 impl DoubleTapDetector {
     fn new() -> DoubleTapDetector {
         DoubleTapDetector {
-            first_tap: None,
+            prev_finger_down: None,
         }
     }
 }
@@ -78,17 +78,17 @@ impl Detector for DoubleTapDetector {
         match evt {
             &Event::FingerDown { x, y, dx, dy, touch_id, finger_id, timestamp, pressure } => {
                 // get distance between two points
-                if let Some(ref tap) = self.first_tap {
+                if let Some(ref tap) = self.prev_finger_down {
                     if let &Event::FingerDown {x: x0, y: y0, touch_id: touch_id0, timestamp: timestamp0, finger_id: finger_id0, ..} = tap {
                         if finger_id == finger_id0 {
-                            let dist = ((x - x0).powi(2) + (y - y0).powi(2)).sqrt();
+                            let dist = get_dist(x, x0, y, y0);
                             if dist < 30. && timestamp - timestamp0 < 300 {
                                 return Some(GestureEvent::DoubleTap);
                             }
                         }
                     }
                 }
-                self.first_tap = Some(Event::FingerDown {
+                self.prev_finger_down = Some(Event::FingerDown {
                     x,
                     y,
                     dx,
@@ -99,18 +99,19 @@ impl Detector for DoubleTapDetector {
                     pressure,
                 });
             },
-            &Event::FingerMotion { x, y, finger_id, .. } => {
+            &Event::FingerMotion { x, y, finger_id, dx, dy, .. } => {
                 // release the first tap if moved
-                let mut done = false;
-                if let Some(ref tap) = self.first_tap {
-                    if let &Event::FingerDown {finger_id: finger_id0, ..} = tap {
-                        if finger_id0 == finger_id {
-                            done = true;
+                let mut cancel = false;
+                if let Some(ref down) = self.prev_finger_down {
+                    if let &Event::FingerDown {finger_id: finger_id0, x: x0, y: y0, ..} = down {
+                        if finger_id0 == finger_id && get_dist(x, x0, y, y0) >= 0.01 {
+                            // moved too far, cancel the tap
+                            cancel = true;
                         }
                     }
                 }
-                if done {
-                    self.first_tap = None;
+                if cancel {
+                    self.prev_finger_down = None;
                 }
             },
             &Event::FingerUp { x, y, finger_id, .. } => {
@@ -157,4 +158,8 @@ impl Detector for PanDetector {
         }
         None
     }
+}
+
+fn get_dist(x: f32, x0: f32, y: f32, y0: f32) -> f32 {
+    ((x - x0).powi(2) + (y - y0).powi(2)).sqrt()
 }

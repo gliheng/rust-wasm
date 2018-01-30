@@ -41,7 +41,7 @@ impl <'ttf> GlyphRenderer<'ttf> {
 
             let &SizedTexture(w, h, ref tex) = self.glyphs.get(&c).unwrap();
             let rect = Rect::new(x, y, w, h);
-            canvas.copy(tex,
+            let _ = canvas.copy(tex,
                         None,
                         rect);
 
