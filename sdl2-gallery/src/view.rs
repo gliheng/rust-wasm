@@ -362,15 +362,12 @@ impl ScrollView {
 
         if let Some((img_w, img_h)) = self.content.borrow().get_img_size() {
             let (w2, h2) = Image::contain_size(img_w, img_h, w, h);
-            self.offset_x_limit = (scale * w2 as f32 - w as f32) / 2.;
-            self.offset_y_limit = (scale * h2 as f32 - h as f32) / 2.;
+            self.offset_x_limit = (scale * w2 as f32 - w as f32).max(0.) / 2.;
+            self.offset_y_limit = (scale * h2 as f32 - h as f32).max(0.) / 2.;
         }
 
         self.scale = scale;
-        if (scale - 1.).abs() < 0.0001 {
-            self.zoom_mode = false;
-            self.scale = 1.0;
-        }
+        self.zoom_mode = scale > 1.0;
     }
 
     fn contain(&mut self) {
