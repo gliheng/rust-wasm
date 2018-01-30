@@ -1,8 +1,10 @@
 pub mod mean;
+pub mod glyph_renderer;
 
 use stdweb::unstable::TryInto;
 use stdweb::web::TypedArray;
 use stdweb::Once;
+use sdl2::render::Texture;
 
 pub fn get_window_dimensiton() -> (u32, u32) {
     let w = js! {
@@ -32,3 +34,6 @@ pub fn fetch<F> (url: &str, cbk: F)
     };
 }
 
+
+pub struct SizedTexture(pub u32, pub u32, pub Texture);
+unsafe impl Send for SizedTexture {}

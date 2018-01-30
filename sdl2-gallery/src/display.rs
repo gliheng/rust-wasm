@@ -10,20 +10,16 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::image::{LoadSurface};
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::surface::Surface;
-use sdl2::render::Texture;
 use sdl2::rect::Rect;
 use sdl2::event::Event;
 use stdweb::web::TypedArray;
-use utils;
+use utils::{self, SizedTexture};
 use std::sync::Arc;
 
 static mut TEXTURE_CREATOR: Option<TextureCreator<WindowContext>> = None;
 lazy_static!{
     static ref LOAD_REGISTER: Mutex<HashMap<String, SizedTexture>> = Mutex::new(HashMap::new());
 }
-
-struct SizedTexture(u32, u32, Texture);
-unsafe impl Send for SizedTexture {}
 
 pub trait Display {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect);

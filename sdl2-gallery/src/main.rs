@@ -29,6 +29,7 @@ use view::GalleryView;
 use display::{Scene, Display};
 use std::rc::Rc;
 use frame_rate::FrameRate;
+use utils::glyph_renderer::GlyphRenderer;
 
 
 fn main() {
@@ -65,24 +66,23 @@ fn main() {
         .unwrap();
 
     let black = Color::RGB(0, 0, 0);
-    let green = Color::RGB(0, 255, 0);
-
     let mut events = ctx.event_pump().unwrap();
     let scene = Scene::new(canvas.texture_creator());
 
     scene.borrow_mut().add_child(GalleryView::new(scene.clone(), gallery, width, height));
 
     let ttf_context = ttf::init().unwrap();
-    let mut font = None;
+    let mut glyph_renderer = None;
     match ttf_context.load_font("./assets/Supermercado-Regular.ttf", 100) {
-        Ok(f) => {
-            font = Some(f);
+        Ok(font) => {
+            let mut g = GlyphRenderer::new(canvas.texture_creator(), font, Color::RGB(0, 255, 0));
+            glyph_renderer = Some(g);
         },
         Err(e) => {
             println!("Cannot load font {:?}", e);
         },
     }
-    let creator = canvas.texture_creator();
+
     let mut frame_rate = FrameRate::new();
     let main_loop = || {
         frame_rate.tick();
@@ -101,16 +101,11 @@ fn main() {
         scene.borrow().update();
         scene.borrow().render(&mut canvas, Rect::new(0, 0, width, height));
 
-        if let Some(ref f) = font {
+        // render framerate
+        if let Some(ref mut r) = glyph_renderer {
             let n = frame_rate.mean().to_string();
-            let surf = f.render(&n).solid(green).unwrap();
-            let rect = Rect::new(0, 0, surf.width(), surf.height());
-            let tex = creator.create_texture_from_surface(surf).unwrap();
-            canvas.copy(&tex,
-                        rect,
-                        rect);
+            r.render(&mut canvas, &n, 0, 0);
         }
-        // let _ = canvas.string(10, 10, &frame_rate.get().to_string(), green);
         canvas.present();
     };
 
