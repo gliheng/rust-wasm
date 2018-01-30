@@ -1,12 +1,6 @@
 use std::f32;
 use sdl2::event::Event;
-use std::vec::Drain;
-
-// struct GestureEventIterator {
-// }
-
-// impl Iterator<GestureEvent> for GestureEventIterator {
-// }
+use sdl2::touch::num_touch_fingers;
 
 pub enum GestureEvent {
     Tap,
@@ -59,7 +53,6 @@ impl GestureDetector {
     }
     // this can be optimized by using an iterator
     pub fn poll(&mut self) -> Vec<GestureEvent> {
-        // Can we use Drain here without collect?
         self.pool.drain(0..).collect()
     }
 }
@@ -150,7 +143,8 @@ impl Detector for PanDetector {
                 return Some(GestureEvent::PanStart{x, y, dx, dy, timestamp, pressure});
             },
             &Event::FingerMotion { x, y, dx, dy, touch_id, finger_id, timestamp, pressure } => {
-                if self.curr_touch_id == touch_id && self.curr_finger_id == finger_id {
+                let fingers = num_touch_fingers(1);
+                if fingers == 1 && self.curr_touch_id == touch_id && self.curr_finger_id == finger_id {
                     return Some(GestureEvent::Pan{x, y, dx, dy, timestamp, pressure});
                 }
             },

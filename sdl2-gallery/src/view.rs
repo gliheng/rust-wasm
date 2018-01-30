@@ -8,6 +8,7 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::rect::Rect;
 use sdl2::event::Event;
+use sdl2::touch::num_touch_fingers;
 use std::rc::{Rc, Weak};
 use std::cell::{RefCell};
 use std::time::{Duration};
@@ -151,17 +152,9 @@ impl Display for GalleryView {
     fn handle_events(&mut self, evt: &Event) {
         self.gesture_detector.feed(evt);
 
-        {
-            let mut scrollview = self.curr.borrow_mut();
-            match evt {
-                // pinch gesture
-                &Event::MultiGesture {x, y, d_dist, ..} => {
-                    scrollview.scale_by(d_dist * 4.);
-                },
-                _ => ()
-            }
-        }
+        let fingers = num_touch_fingers(1);
 
+        // single touch
         for ref event in self.gesture_detector.poll() {
             {
                 let mut scrollview = self.curr.borrow_mut();
@@ -215,7 +208,7 @@ impl Display for GalleryView {
                         self.dragging = false;
                         // move direction: -1 to left, 1 to right, 0 restore
                         let delta = self.translate_x - self.translate_x_pre;
-                        let threshold = 150; // threshold for the move
+                        let threshold = 100; // threshold for the move
                         let mut mov = if delta > threshold {
                             1
                         } else if delta < -threshold {
@@ -234,6 +227,18 @@ impl Display for GalleryView {
                     },
                     _ => (),
                 }
+            }
+        }
+
+        if fingers >= 2 {
+            // multi touch
+            let mut scrollview = self.curr.borrow_mut();
+            match evt {
+                // pinch gesture
+                &Event::MultiGesture {x, y, d_dist, ..} => {
+                    scrollview.scale_by(x, y, d_dist * 5.);
+                },
+                _ => ()
             }
         }
     }
@@ -321,7 +326,7 @@ impl ScrollView {
         self.zoom_mode = false;
     }
 
-    fn scale_by(&mut self, d: f32) {
+    fn scale_by(&mut self, x: f32, y: f32, d: f32) {
         let r = self.scale;
         self.set_scale(r + d);
     }
