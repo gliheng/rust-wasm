@@ -35,6 +35,8 @@ extern "C" {
     pub fn emscripten_exit_with_live_runtime();
 
     pub fn emscripten_debugger();
+
+    pub fn emscripten_async_wget(url: *const c_char, file: *const c_char, onload: em_str_callback_func, onerror: em_str_callback_func);
 }
 
 thread_local!(static MAIN_LOOP_CALLBACK: RefCell<*mut c_void> = RefCell::new(null_mut()));

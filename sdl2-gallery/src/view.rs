@@ -9,7 +9,7 @@ use sdl2::render::{Canvas, TextureCreator};
 use sdl2::rect::Rect;
 use sdl2::event::Event;
 use std::rc::{Rc, Weak};
-use std::cell::RefCell;
+use std::cell::{RefCell};
 use std::time::{Duration};
 use std::mem::drop;
 use transition::Transition;
@@ -162,7 +162,7 @@ impl Display for GalleryView {
             }
         }
 
-        for event in &self.gesture_detector.poll() {
+        for ref event in self.gesture_detector.poll() {
             {
                 let mut scrollview = self.curr.borrow_mut();
                 match event {
@@ -224,7 +224,7 @@ impl Display for GalleryView {
                             0
                         };
 
-                        // avoid invalid move
+                        // duel with invalid move for the first slide and the last
                         if mov == -1 && self.img_idx >= self.config.urls.len() - 1
                             || mov == 1 && self.img_idx == 0 {
                                 mov = 0;

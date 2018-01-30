@@ -73,7 +73,7 @@ fn main() {
 
     let ttf_context = ttf::init().unwrap();
     let mut glyph_renderer = None;
-    match ttf_context.load_font("./assets/Supermercado-Regular.ttf", 100) {
+    match ttf_context.load_font("./assets/Supermercado-Regular.ttf", 50) {
         Ok(font) => {
             let mut g = GlyphRenderer::new(canvas.texture_creator(), font, Color::RGB(0, 255, 0));
             glyph_renderer = Some(g);

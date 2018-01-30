@@ -1,6 +1,6 @@
 use std::f32;
 use sdl2::event::Event;
-use std::mem;
+use std::vec::Drain;
 
 // struct GestureEventIterator {
 // }
@@ -59,9 +59,8 @@ impl GestureDetector {
     }
     // this can be optimized by using an iterator
     pub fn poll(&mut self) -> Vec<GestureEvent> {
-        let mut p = vec![];
-        mem::swap(&mut self.pool, &mut p);
-        return p;
+        // Can we use Drain here without collect?
+        self.pool.drain(0..).collect()
     }
 }
 
@@ -90,7 +89,7 @@ impl Detector for DoubleTapDetector {
                     if let &Event::FingerDown {x: x0, y: y0, touch_id: touch_id0, timestamp: timestamp0, finger_id: finger_id0, ..} = tap {
                         if finger_id == finger_id0 {
                             let dist = ((x - x0).powi(2) + (y - y0).powi(2)).sqrt();
-                            if dist < 10. && timestamp - timestamp0 < 300 {
+                            if dist < 30. && timestamp - timestamp0 < 300 {
                                 return Some(GestureEvent::DoubleTap);
                             }
                         }
