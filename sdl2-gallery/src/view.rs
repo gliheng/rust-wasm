@@ -16,6 +16,7 @@ use std::mem::drop;
 use transition::Transition;
 use gesture::{GestureDetector, GestureEvent};
 use utils::mean::Mean;
+use config::CONFIG;
 
 const GAP: i32 = 30;
 
@@ -24,7 +25,6 @@ pub struct GalleryView {
     prev: Rc<RefCell<ScrollView>>,
     curr: Rc<RefCell<ScrollView>>,
     next: Rc<RefCell<ScrollView>>,
-    config: Gallery,
     width: u32,
     height: u32,
     dragging: bool,
@@ -36,7 +36,12 @@ pub struct GalleryView {
 }
 
 impl GalleryView {
-    pub fn new(parent: Rc<RefCell<Scene>>, config: Gallery, width: u32, height: u32) -> Rc<RefCell<GalleryView>> {
+    pub fn new(parent: Rc<RefCell<Scene>>) -> Rc<RefCell<GalleryView>> {
+
+        let r = CONFIG.read().unwrap();
+        let width = *r.get_u32("width").unwrap();
+        let height = *r.get_u32("height").unwrap();
+
         let prev = ScrollView::new(Image::new_with_dimension("".to_owned(), width, height));
         prev.borrow_mut().set_rect(0, 0, width, height);
 
@@ -51,7 +56,6 @@ impl GalleryView {
             prev,
             curr,
             next,
-            config,
             width,
             height,
             dragging: false,
@@ -68,11 +72,13 @@ impl GalleryView {
     fn rotate(&mut self) {
         println!("rotate with translate_x: {}", self.translate_x);
         let p = self.img_idx as isize - 1;
+        let r = CONFIG.read().unwrap();
+        let config = r.get_gallery("gallery").unwrap();
         if self.translate_x > 0 && p >= 0 {
             println!("rotate left");
             self.translate_x -= self.width as i32 + GAP;
             self.set_curr_image(p as usize);
-        } else if self.translate_x < 0 && self.img_idx + 1 < self.config.urls.len() {
+        } else if self.translate_x < 0 && self.img_idx + 1 < config.urls.len() {
             println!("rotate right");
             self.translate_x += self.width as i32 + GAP;
             let i = self.img_idx + 1;
@@ -83,13 +89,16 @@ impl GalleryView {
     fn set_curr_image(&mut self, idx: usize) {
         //  set prev scrollview
         let mut scrollview = self.prev.borrow_mut();
+        let r = CONFIG.read().unwrap();
+        let config = r.get_gallery("gallery").unwrap();
+
         {
             let mut img = scrollview.content.borrow_mut();
 
             let i = idx as isize - 1;
             if i < 0 {
                 img.set_src("");
-            } else if let Some(url) = self.config.urls.get(i as usize) {
+            } else if let Some(url) = config.urls.get(i as usize) {
                 img.set_src(url);
             } else {
                 img.set_src("");
@@ -101,7 +110,7 @@ impl GalleryView {
         let mut scrollview = self.curr.borrow_mut();
         {
             let mut img = scrollview.content.borrow_mut();
-            if let Some(url) = self.config.urls.get(idx) {
+            if let Some(url) = config.urls.get(idx) {
                 img.set_src(url);
             } else {
                 img.set_src("");
@@ -113,7 +122,7 @@ impl GalleryView {
         let mut scrollview = self.next.borrow_mut();
         {
             let mut img = scrollview.content.borrow_mut();
-            if let Some(url) = self.config.urls.get(idx + 1) {
+            if let Some(url) = config.urls.get(idx + 1) {
                 img.set_src(url);
             } else {
                 img.set_src("");
@@ -150,8 +159,9 @@ impl Display for GalleryView {
         }
     }
     fn handle_events(&mut self, evt: &Event) {
+        let r = CONFIG.read().unwrap();
+        let config = r.get_gallery("gallery").unwrap();
         self.gesture_detector.feed(evt);
-
         let fingers = num_touch_fingers(1);
 
         // single touch
@@ -218,7 +228,7 @@ impl Display for GalleryView {
                         };
 
                         // duel with invalid move for the first slide and the last
-                        if mov == -1 && self.img_idx >= self.config.urls.len() - 1
+                        if mov == -1 && self.img_idx >= config.urls.len() - 1
                             || mov == 1 && self.img_idx == 0 {
                                 mov = 0;
                             }
@@ -457,3 +467,21 @@ fn apply_friction(friction: f32, dx: f32) -> f32 {
         dx + (if dx > 0f32 {-friction} else {friction})
     }
 }
+
+pub struct ListView {
+    parent: Weak<RefCell<Scene>>,
+}
+
+impl ListView {
+    fn new(parent: Rc<RefCell<Scene>>) -> Rc<ListView> {
+        Rc::new(ListView {
+            parent: Rc::downgrade(&parent),
+        })
+    }
+}
+
+impl Display for ListView {
+    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
+    }
+}
+

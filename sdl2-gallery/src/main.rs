@@ -14,6 +14,7 @@ mod display;
 mod model;
 mod view;
 mod transition;
+mod config;
 mod gesture;
 
 use std::process;
@@ -30,7 +31,7 @@ use display::{Scene, Display};
 use std::rc::Rc;
 use frame_rate::FrameRate;
 use utils::glyph_renderer::GlyphRenderer;
-
+use config::Config;
 
 fn main() {
     use emscripten::{emscripten};
@@ -69,7 +70,14 @@ fn main() {
     let mut events = ctx.event_pump().unwrap();
     let scene = Scene::new(canvas.texture_creator());
 
-    scene.borrow_mut().add_child(GalleryView::new(scene.clone(), gallery, width, height));
+    let mut config = Config::get_instance();
+    if let Ok(mut c) = config.write() {
+        c.set("gallery", &gallery);
+        c.set("width", &width);
+        c.set("height", &height);
+    }
+
+    scene.borrow_mut().add_child(GalleryView::new(scene.clone()));
 
     let ttf_context = ttf::init().unwrap();
     let mut glyph_renderer = None;
