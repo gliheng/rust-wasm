@@ -69,11 +69,17 @@ impl Display for Scene {
     }
 }
 
+pub enum FillMode {
+    COVER,
+    CONTAIN,
+}
+
 pub struct Image {
     dirty: bool,
     src: String,
     w: u32,
     h: u32,
+    fill: FillMode,
 }
 
 impl Image {
@@ -105,6 +111,9 @@ impl Image {
         if src != "" {
             load_img(src);
         }
+    }
+    pub fn set_fill(&mut self, v: FillMode) {
+        self.fill = v;
     }
     pub fn get_img_size(&self) -> Option<(u32, u32)> {
         let m = LOAD_REGISTER.lock().unwrap();
@@ -141,13 +150,26 @@ impl Display for Image {
         let m = LOAD_REGISTER.lock().unwrap();
         if let Some(&SizedTexture(img_w, img_h, ref tex)) = m.get(&self.src) {
             let s_rect = Rect::new(0, 0, img_w, img_h);
-            let (w, h) = Self::contain_size(img_w, img_h, rect.width(), rect.height());
+
+            // work out render size
+            let (w, h) = match self.fill {
+                FillMode::CONTAIN => {
+                    Self::contain_size(img_w, img_h, rect.width(), rect.height())
+                },
+                FillMode::COVER => {
+                    Self::cover_size(img_w, img_h, rect.width(), rect.height())
+                }
+            };
+
             let t_rect = Rect::new((rect.width() as i32 - w as i32) / 2 + rect.x(),
                                    (rect.height() as i32 - h as i32) / 2 + rect.y(),
                                    w, h);
+
+            canvas.set_clip_rect(rect);
             let _ = canvas.copy(tex,
                                 s_rect,
                                 t_rect);
+            canvas.set_clip_rect(None);
         }
     }
 }
@@ -159,6 +181,7 @@ impl Default for Image {
             src: "".to_string(),
             w: 0,
             h: 0,
+            fill: FillMode::CONTAIN,
         }
     }
 }

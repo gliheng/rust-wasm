@@ -1,8 +1,14 @@
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
+pub struct GalleryItem {
+    pub url: String,
+    pub preview: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Gallery {
-    pub urls: Vec<String>
+    pub pics: Vec<GalleryItem>,
 }
 
 js_deserializable!( Gallery );

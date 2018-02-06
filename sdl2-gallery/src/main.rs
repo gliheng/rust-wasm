@@ -26,7 +26,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use sdl2::ttf;
 use model::Gallery;
-use view::GalleryView;
+use view::{GalleryView, Preview};
 use display::{Scene, Display};
 use std::rc::Rc;
 use frame_rate::FrameRate;
@@ -41,7 +41,6 @@ fn main() {
         return Module.gallery;
     };
     let gallery: Gallery = gallery.try_into().unwrap();
-    println!("{:?}", gallery);
 
     let ctx = sdl2::init().unwrap();
     let (width, height) = utils::get_window_dimensiton();

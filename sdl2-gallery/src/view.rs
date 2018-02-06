@@ -1,12 +1,11 @@
 // TODO this can be dropped
 // translate_x to f32
 
-use display::{Image, Scene};
+use display::{Image, Scene, Display, FillMode};
 use model::Gallery;
-use display::Display;
 use sdl2::video::{Window, WindowContext};
 use sdl2::render::{Canvas, TextureCreator};
-use sdl2::rect::Rect;
+use sdl2::rect::{Rect, Point};
 use sdl2::event::Event;
 use sdl2::touch::num_touch_fingers;
 use std::rc::{Rc, Weak};
@@ -18,9 +17,68 @@ use gesture::{GestureDetector, GestureEvent};
 use utils::mean::Mean;
 use config::CONFIG;
 
-const GAP: i32 = 30;
+const THUMB_W: u32 = 100;
+const THUMB_H: u32 = 100;
+const THUMB_GAP: u32 = 10;
 
 pub struct GalleryView {
+    parent: Weak<RefCell<Scene>>,
+    images: Vec<Rc<RefCell<Image>>>,
+    dragging: bool,
+    translate_y: i32,
+    translate_y_pre: i32,
+    gesture_detector: GestureDetector,
+}
+
+impl GalleryView {
+    pub fn new(parent: Rc<RefCell<Scene>>) -> Rc<RefCell<GalleryView>> {
+        let r = CONFIG.read().unwrap();
+        let config = r.get_gallery("gallery").unwrap();
+        let width = *r.get_u32("width").unwrap();
+        let height = *r.get_u32("height").unwrap();
+        let images = config.pics.iter().map(|ref p| {
+            let img = Image::new_with_dimension(p.preview.to_owned(), THUMB_W, THUMB_H);
+            img.borrow_mut().set_fill(FillMode::COVER);
+            img
+        }).collect();
+
+        let mut g = GalleryView {
+            parent: Rc::downgrade(&parent),
+            images,
+            dragging: false,
+            translate_y: 0,
+            translate_y_pre: 0,
+            gesture_detector: GestureDetector::new(),
+        };
+        Rc::new(RefCell::new(g))
+    }
+}
+impl Display for GalleryView {
+    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
+        let r = CONFIG.read().unwrap();
+        let width = *r.get_u32("width").unwrap();
+
+        // n items each row
+        let n = ((width as f32 - THUMB_GAP as f32) / (THUMB_GAP + THUMB_W) as f32).floor() as u32;
+        let w = (width - THUMB_GAP) / n - THUMB_GAP;
+        let h = w;
+
+        canvas.set_clip_rect(rect);
+        for (i, img) in self.images.iter().enumerate() {
+            let x = THUMB_GAP + w / 2 + (w + THUMB_GAP) * (i as u32 % n);
+            let y = THUMB_GAP + h / 2 + (h + THUMB_GAP) * (i as u32 / n);
+            let r = Rect::from_center(Point::new(x as i32, y as i32), w, h);
+            img.borrow().render(canvas, r);
+        }
+        canvas.set_clip_rect(None);
+    }
+    fn handle_events(&mut self, evt: &Event) {
+    }
+}
+
+const GAP: i32 = 30;
+
+pub struct Preview {
     parent: Weak<RefCell<Scene>>,
     prev: Rc<RefCell<ScrollView>>,
     curr: Rc<RefCell<ScrollView>>,
@@ -35,8 +93,8 @@ pub struct GalleryView {
     gesture_detector: GestureDetector,
 }
 
-impl GalleryView {
-    pub fn new(parent: Rc<RefCell<Scene>>) -> Rc<RefCell<GalleryView>> {
+impl Preview {
+    pub fn new(parent: Rc<RefCell<Scene>>) -> Rc<RefCell<Preview>> {
 
         let r = CONFIG.read().unwrap();
         let width = *r.get_u32("width").unwrap();
@@ -51,7 +109,7 @@ impl GalleryView {
         let next = ScrollView::new(Image::new_with_dimension("".to_owned(), width, height));
         next.borrow_mut().set_rect(0, 0, width, height);
 
-        let mut g = GalleryView {
+        let mut g = Preview {
             parent: Rc::downgrade(&parent),
             prev,
             curr,
@@ -78,7 +136,7 @@ impl GalleryView {
             println!("rotate left");
             self.translate_x -= self.width as i32 + GAP;
             self.set_curr_image(p as usize);
-        } else if self.translate_x < 0 && self.img_idx + 1 < config.urls.len() {
+        } else if self.translate_x < 0 && self.img_idx + 1 < config.pics.len() {
             println!("rotate right");
             self.translate_x += self.width as i32 + GAP;
             let i = self.img_idx + 1;
@@ -98,8 +156,8 @@ impl GalleryView {
             let i = idx as isize - 1;
             if i < 0 {
                 img.set_src("");
-            } else if let Some(url) = config.urls.get(i as usize) {
-                img.set_src(url);
+            } else if let Some(pic) = config.pics.get(i as usize) {
+                img.set_src(&pic.url);
             } else {
                 img.set_src("");
             }
@@ -110,8 +168,8 @@ impl GalleryView {
         let mut scrollview = self.curr.borrow_mut();
         {
             let mut img = scrollview.content.borrow_mut();
-            if let Some(url) = config.urls.get(idx) {
-                img.set_src(url);
+            if let Some(pic) = config.pics.get(idx) {
+                img.set_src(&pic.url);
             } else {
                 img.set_src("");
             }
@@ -122,8 +180,8 @@ impl GalleryView {
         let mut scrollview = self.next.borrow_mut();
         {
             let mut img = scrollview.content.borrow_mut();
-            if let Some(url) = config.urls.get(idx + 1) {
-                img.set_src(url);
+            if let Some(pic) = config.pics.get(idx + 1) {
+                img.set_src(&pic.url);
             } else {
                 img.set_src("");
             }
@@ -140,7 +198,7 @@ impl GalleryView {
     }
 }
 
-impl Display for GalleryView {
+impl Display for Preview {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         if self.translate_x > 0 {
             let mut r0 = rect.clone();
@@ -228,7 +286,7 @@ impl Display for GalleryView {
                         };
 
                         // duel with invalid move for the first slide and the last
-                        if mov == -1 && self.img_idx >= config.urls.len() - 1
+                        if mov == -1 && self.img_idx >= config.pics.len() - 1
                             || mov == 1 && self.img_idx == 0 {
                                 mov = 0;
                             }
@@ -266,7 +324,7 @@ impl Display for GalleryView {
             }
         }
 
-        // check galleryview horizontal slide end
+        // check Preview horizontal slide end
         let mut in_transition = !self.dragging && self.transition.is_some();
         if in_transition {
             if let Some(ref mut transition) = self.transition {
@@ -467,21 +525,3 @@ fn apply_friction(friction: f32, dx: f32) -> f32 {
         dx + (if dx > 0f32 {-friction} else {friction})
     }
 }
-
-pub struct ListView {
-    parent: Weak<RefCell<Scene>>,
-}
-
-impl ListView {
-    fn new(parent: Rc<RefCell<Scene>>) -> Rc<ListView> {
-        Rc::new(ListView {
-            parent: Rc::downgrade(&parent),
-        })
-    }
-}
-
-impl Display for ListView {
-    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-    }
-}
-
