@@ -15,14 +15,14 @@ use std::mem::drop;
 use transition::Transition;
 use gesture::{GestureDetector, GestureEvent};
 use utils::mean::Mean;
-use config::CONFIG;
+use config::{Config};
 
 const THUMB_W: u32 = 100;
 const THUMB_H: u32 = 100;
 const THUMB_GAP: u32 = 10;
 
 pub struct GalleryView {
-    parent: Weak<RefCell<Scene>>,
+    parent: Weak<RefCell<Display>>,
     images: Vec<Rc<RefCell<Image>>>,
     dragging: bool,
     translate_y: i32,
@@ -32,10 +32,9 @@ pub struct GalleryView {
 
 impl GalleryView {
     pub fn new(parent: Rc<RefCell<Scene>>) -> Rc<RefCell<GalleryView>> {
-        let r = CONFIG.read().unwrap();
-        let config = r.get_gallery("gallery").unwrap();
-        let width = *r.get_u32("width").unwrap();
-        let height = *r.get_u32("height").unwrap();
+        let config = Config::get_gallery().unwrap();
+        let width = *Config::get_u32("width").unwrap();
+        let height = *Config::get_u32("height").unwrap();
         let images = config.pics.iter().map(|ref p| {
             let img = Image::new_with_dimension(p.preview.to_owned(), THUMB_W, THUMB_H);
             img.borrow_mut().set_fill(FillMode::COVER);
@@ -52,31 +51,77 @@ impl GalleryView {
         };
         Rc::new(RefCell::new(g))
     }
-}
-impl Display for GalleryView {
-    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-        let r = CONFIG.read().unwrap();
-        let width = *r.get_u32("width").unwrap();
+    fn image_under_point(&self, x: u32, y: u32) -> Option<usize> {
+        let (n, w, h) = self.get_row_layout();
+        for i in 0..self.images.len() {
+            let (rx, ry) = self.item_center(n, w, h, i);
+            let r = Rect::from_center(Point::new(rx as i32, ry as i32), w, h);
+            if r.contains_point(Point::new(x as i32, y as i32)) {
+                return Some(i)
+            }
+        }
+        None
+    }
+    fn get_row_layout(&self) -> (u32, u32, u32) {
+        let width = *Config::get_u32("width").unwrap();
 
         // n items each row
         let n = ((width as f32 - THUMB_GAP as f32) / (THUMB_GAP + THUMB_W) as f32).floor() as u32;
         let w = (width - THUMB_GAP) / n - THUMB_GAP;
-        let h = w;
+        (n, w, w) // n items each row, each item with width w, height w
+    }
+    fn item_center(&self, n: u32, w: u32, h: u32, i: usize) -> (u32, u32) {
+        let i: u32 = i as u32;
+        let x = THUMB_GAP + w / 2 + (w + THUMB_GAP) * (i % n);
+        let y = THUMB_GAP + h / 2 + (h + THUMB_GAP) * (i / n);
+        (x, y)
+    }
+}
+impl Display for GalleryView {
+    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
+        let (n, w, h) = self.get_row_layout();
 
         canvas.set_clip_rect(rect);
         for (i, img) in self.images.iter().enumerate() {
-            let x = THUMB_GAP + w / 2 + (w + THUMB_GAP) * (i as u32 % n);
-            let y = THUMB_GAP + h / 2 + (h + THUMB_GAP) * (i as u32 / n);
+            let (x, y) = self.item_center(n, w, h, i);
             let r = Rect::from_center(Point::new(x as i32, y as i32), w, h);
             img.borrow().render(canvas, r);
         }
         canvas.set_clip_rect(None);
     }
     fn handle_events(&mut self, evt: &Event) {
+        self.gesture_detector.feed(evt);
+
+        // single touch
+        for ref event in self.gesture_detector.poll() {
+            match event {
+                &GestureEvent::Tap(x, y) => {
+                    let x = x * (*Config::get_u32("width").unwrap()) as f32;
+                    let y = y * (*Config::get_u32("height").unwrap()) as f32;
+                    let i = self.image_under_point(x as u32, y as u32);
+
+                    println!("tap! {} {} {:?}", x, y, i);
+
+                    
+                },
+                &GestureEvent::PanStart { .. } => {
+                    self.dragging = true;
+                },
+                &GestureEvent::Pan { x, y, dx, dy, .. } => {
+                },
+                &GestureEvent::PanEnd { .. } => {
+                    self.dragging = false;
+                },
+                _ => ()
+            }
+        }
+    }
+    fn is_interactive(&self) -> bool {
+        true
     }
 }
 
-const GAP: i32 = 30;
+const PREVIEW_GAP: i32 = 30;
 
 pub struct Preview {
     parent: Weak<RefCell<Scene>>,
@@ -96,9 +141,8 @@ pub struct Preview {
 impl Preview {
     pub fn new(parent: Rc<RefCell<Scene>>) -> Rc<RefCell<Preview>> {
 
-        let r = CONFIG.read().unwrap();
-        let width = *r.get_u32("width").unwrap();
-        let height = *r.get_u32("height").unwrap();
+        let width = *Config::get_u32("width").unwrap();
+        let height = *Config::get_u32("height").unwrap();
 
         let prev = ScrollView::new(Image::new_with_dimension("".to_owned(), width, height));
         prev.borrow_mut().set_rect(0, 0, width, height);
@@ -130,15 +174,14 @@ impl Preview {
     fn rotate(&mut self) {
         println!("rotate with translate_x: {}", self.translate_x);
         let p = self.img_idx as isize - 1;
-        let r = CONFIG.read().unwrap();
-        let config = r.get_gallery("gallery").unwrap();
+        let config = Config::get_gallery().unwrap();
         if self.translate_x > 0 && p >= 0 {
             println!("rotate left");
-            self.translate_x -= self.width as i32 + GAP;
+            self.translate_x -= self.width as i32 + PREVIEW_GAP;
             self.set_curr_image(p as usize);
         } else if self.translate_x < 0 && self.img_idx + 1 < config.pics.len() {
             println!("rotate right");
-            self.translate_x += self.width as i32 + GAP;
+            self.translate_x += self.width as i32 + PREVIEW_GAP;
             let i = self.img_idx + 1;
             self.set_curr_image(i);
         }
@@ -147,8 +190,7 @@ impl Preview {
     fn set_curr_image(&mut self, idx: usize) {
         //  set prev scrollview
         let mut scrollview = self.prev.borrow_mut();
-        let r = CONFIG.read().unwrap();
-        let config = r.get_gallery("gallery").unwrap();
+        let config = Config::get_gallery().unwrap();
 
         {
             let mut img = scrollview.content.borrow_mut();
@@ -202,7 +244,7 @@ impl Display for Preview {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         if self.translate_x > 0 {
             let mut r0 = rect.clone();
-            r0.offset(self.translate_x - self.width as i32 - GAP, 0);
+            r0.offset(self.translate_x - self.width as i32 - PREVIEW_GAP, 0);
             self.prev.borrow().render(canvas, r0);
         }
 
@@ -212,15 +254,13 @@ impl Display for Preview {
 
         if self.translate_x < 0 {
             let mut r2 = rect.clone();
-            r2.offset(self.translate_x + self.width as i32 + GAP, 0);
+            r2.offset(self.translate_x + self.width as i32 + PREVIEW_GAP, 0);
             self.next.borrow().render(canvas, r2);
         }
     }
     fn handle_events(&mut self, evt: &Event) {
-        let r = CONFIG.read().unwrap();
-        let config = r.get_gallery("gallery").unwrap();
+        let config = Config::get_gallery().unwrap();
         self.gesture_detector.feed(evt);
-        let fingers = num_touch_fingers(1);
 
         // single touch
         for ref event in self.gesture_detector.poll() {
@@ -228,7 +268,7 @@ impl Display for Preview {
                 let mut scrollview = self.curr.borrow_mut();
                 match event {
                     // double tap gesture
-                    &GestureEvent::DoubleTap => {
+                    &GestureEvent::DoubleTap(..) => {
                         if scrollview.zoom_mode {
                             // exit zoom
                             scrollview.exit_zoom();
@@ -290,7 +330,7 @@ impl Display for Preview {
                             || mov == 1 && self.img_idx == 0 {
                                 mov = 0;
                             }
-                        let target_x = mov * (self.width as i32 + GAP);
+                        let target_x = mov * (self.width as i32 + PREVIEW_GAP);
                         self.move_to(target_x, Duration::from_millis(300));
                     },
                     _ => (),
@@ -298,6 +338,7 @@ impl Display for Preview {
             }
         }
 
+        let fingers = num_touch_fingers(1);
         if fingers >= 2 {
             // multi touch
             let mut scrollview = self.curr.borrow_mut();
@@ -311,9 +352,6 @@ impl Display for Preview {
                 _ => ()
             }
         }
-    }
-    fn is_interactive(&self) -> bool {
-        true
     }
     fn update(&mut self) {
         // update scrollview slide animation
@@ -340,6 +378,9 @@ impl Display for Preview {
                 self.rotate();
             }
         }
+    }
+    fn is_interactive(&self) -> bool {
+        true
     }
 }
 

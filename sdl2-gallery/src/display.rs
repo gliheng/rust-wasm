@@ -106,6 +106,9 @@ impl Image {
             ..Default::default()
         }))
     }
+    pub fn get_src(&mut self) -> &str {
+        &self.src
+    }
     pub fn set_src(&mut self, src: &str) {
         self.src = src.to_string();
         if src != "" {

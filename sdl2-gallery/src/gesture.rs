@@ -3,8 +3,8 @@ use sdl2::event::Event;
 use sdl2::touch::num_touch_fingers;
 
 pub enum GestureEvent {
-    Tap,
-    DoubleTap,
+    Tap(f32, f32),
+    DoubleTap(f32, f32),
     PanStart {
         timestamp: u32,
         x: f32,
@@ -41,7 +41,10 @@ impl GestureDetector {
     pub fn new() -> GestureDetector {
         GestureDetector {
             pool: vec![],
-            detectors: vec![Box::new(DoubleTapDetector::new()), Box::new(PanDetector::new())]
+            detectors: vec![
+                Box::new(TapDetector::new()),
+                Box::new(PanDetector::new())
+            ]
         }
     }
     pub fn feed(&mut self, evt: &Event) {
@@ -51,7 +54,6 @@ impl GestureDetector {
             }
         }
     }
-    // this can be optimized by using an iterator
     pub fn poll(&mut self) -> Vec<GestureEvent> {
         self.pool.drain(0..).collect()
     }
@@ -61,33 +63,28 @@ trait Detector {
     fn feed(&mut self, evt: &Event) -> Option<GestureEvent>;
 }
 
-pub struct DoubleTapDetector {
+const TAP_DURATION: u32 = 150;
+const DOUBLETAP_DURATION: u32 = 300;
+const TAP_DIST: f32 = 0.01;
+
+pub struct TapDetector {
     prev_finger_down: Option<Event>,
+    prev_tap: Option<(f32, f32, u32)>,
 }
 
-impl DoubleTapDetector {
-    fn new() -> DoubleTapDetector {
-        DoubleTapDetector {
+impl TapDetector {
+    fn new() -> TapDetector {
+        TapDetector {
             prev_finger_down: None,
+            prev_tap: None,
         }
     }
 }
 
-impl Detector for DoubleTapDetector {
+impl Detector for TapDetector {
     fn feed(&mut self, evt: &Event) -> Option<GestureEvent> {
         match evt {
             &Event::FingerDown { x, y, dx, dy, touch_id, finger_id, timestamp, pressure } => {
-                // get distance between two points
-                if let Some(ref tap) = self.prev_finger_down {
-                    if let &Event::FingerDown {x: x0, y: y0, touch_id: touch_id0, timestamp: timestamp0, finger_id: finger_id0, ..} = tap {
-                        if finger_id == finger_id0 {
-                            let dist = get_dist(x, x0, y, y0);
-                            if dist < 30. && timestamp - timestamp0 < 300 {
-                                return Some(GestureEvent::DoubleTap);
-                            }
-                        }
-                    }
-                }
                 self.prev_finger_down = Some(Event::FingerDown {
                     x,
                     y,
@@ -100,11 +97,11 @@ impl Detector for DoubleTapDetector {
                 });
             },
             &Event::FingerMotion { x, y, finger_id, dx, dy, .. } => {
-                // release the first tap if moved
+                // release the first tap if moved too much
                 let mut cancel = false;
                 if let Some(ref down) = self.prev_finger_down {
                     if let &Event::FingerDown {finger_id: finger_id0, x: x0, y: y0, ..} = down {
-                        if finger_id0 == finger_id && get_dist(x, x0, y, y0) >= 0.01 {
+                        if finger_id0 == finger_id && get_dist(x, y, x0, y0) >= 0.01 {
                             // moved too far, cancel the tap
                             cancel = true;
                         }
@@ -114,7 +111,28 @@ impl Detector for DoubleTapDetector {
                     self.prev_finger_down = None;
                 }
             },
-            &Event::FingerUp { x, y, finger_id, .. } => {
+            &Event::FingerUp { x, y, finger_id, timestamp, .. } => {
+                // get distance between two points
+                if let Some(ref down) = self.prev_finger_down {
+                    if let &Event::FingerDown {x: x0, y: y0, touch_id: touch_id0, timestamp: timestamp0, finger_id: finger_id0, ..} = down {
+                        if finger_id == finger_id0 {
+                            if get_dist(x, y, x0, y0) < TAP_DIST && timestamp - timestamp0 < TAP_DURATION {
+                                // we got a Tap or a DoubleTap
+                                let mut single = true;
+                                if let Some(ref tap) = self.prev_tap {
+                                    if get_dist(x, y, tap.0, tap.1) < TAP_DIST && timestamp - tap.2 < DOUBLETAP_DURATION {
+                                        single = false;
+                                    }
+                                }
+                                if single {
+                                    self.prev_tap = Some((x, y, timestamp));
+                                    return Some(GestureEvent::Tap(x, y));
+                                }
+                                return Some(GestureEvent::DoubleTap(x, y));
+                            }
+                        }
+                    }
+                }
             },
             _ => ()
         }
@@ -160,6 +178,6 @@ impl Detector for PanDetector {
     }
 }
 
-fn get_dist(x: f32, x0: f32, y: f32, y0: f32) -> f32 {
+fn get_dist(x: f32, y: f32, x0: f32, y0: f32) -> f32 {
     ((x - x0).powi(2) + (y - y0).powi(2)).sqrt()
 }

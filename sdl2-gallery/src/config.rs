@@ -37,16 +37,18 @@ impl Config {
             None => None,
         }
     }
-    pub fn get_u32(&self, key: &'static str) -> Option<&u32> {
-        if let Some(v) = self.get(key) {
+    pub fn get_u32(key: &'static str) -> Option<&'static u32> {
+        let r = CONFIG.read().unwrap();
+        if let Some(v) = r.get(key) {
             unsafe {
                 return (*v).downcast_ref::<u32>();
             }
         }
         None
     }
-    pub fn get_gallery(&self, key: &'static str) -> Option<&Gallery> {
-        if let Some(v) = self.get(key) {
+    pub fn get_gallery() -> Option<&'static Gallery> {
+        let r = CONFIG.read().unwrap();
+        if let Some(v) = r.get("gallery") {
             unsafe {
                 return (*v).downcast_ref::<Gallery>();
             }
