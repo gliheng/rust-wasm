@@ -12,7 +12,6 @@ use sdl2::pixels::{Color, PixelFormatEnum};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
-use sdl2::ttf;
 use frame_rate::FrameRate;
 use utils::glyph_renderer::GlyphRenderer;
 
@@ -46,18 +45,7 @@ fn main() {
     let black = Color::RGB(0, 0, 0);
     let mut events = ctx.event_pump().unwrap();
 
-    let ttf_context = ttf::init().unwrap();
-    let mut glyph_renderer = None;
-    match ttf_context.load_font("./assets/Supermercado-Regular.ttf", 50) {
-        Ok(font) => {
-            let mut g = GlyphRenderer::new(canvas.texture_creator(), font, Color::RGB(0, 255, 0));
-            glyph_renderer = Some(g);
-        },
-        Err(e) => {
-            println!("Cannot load font {:?}", e);
-        },
-    }
-
+    let mut glyph_renderer = GlyphRenderer::new(canvas.texture_creator(), font, Color::RGB(0, 255, 0));
     let mut frame_rate = FrameRate::new();
     let main_loop = || {
         frame_rate.tick();
@@ -73,10 +61,9 @@ fn main() {
         canvas.clear();
 
         // render framerate
-        if let Some(ref mut r) = glyph_renderer {
-            let n = frame_rate.mean().to_string();
-            r.render(&mut canvas, &n, 0, 0);
-        }
+        let n = frame_rate.mean().to_string();
+        glyph_renderer.render(&mut canvas, &n, 0, 0);
+
         canvas.present();
     };
 

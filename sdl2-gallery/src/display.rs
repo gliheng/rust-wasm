@@ -21,7 +21,7 @@ use stdweb::web::TypedArray;
 use config::{Config};
 use utils::{self, SizedTexture};
 use actions::Action;
-use gesture::{GestureDetector, GestureEvent};
+use gesture::{GestureDetector, GestureEvent, GestureDetectorTypes};
 
 static mut TEXTURE_CREATOR: Option<TextureCreator<WindowContext>> = None;
 lazy_static!{
@@ -132,18 +132,18 @@ impl Image {
             ..Default::default()
         }))
     }
-    pub fn new_with_dimension_local(src: String, w: u32, h: u32) -> Rc<RefCell<Image>> {
+    pub fn new_with_dimension_local(src: String, w: u32, h: u32) -> Image {
         if src != "" {
             load_local_img(&src);
         }
-        Rc::new(RefCell::new(Image {
+        Image {
             dirty: false,
             src,
             w,
             h,
             local: true,
             ..Default::default()
-        }))
+        }
     }
     pub fn new_with_dimension(src: String, w: u32, h: u32) -> Rc<RefCell<Image>> {
         if src != "" {
@@ -306,7 +306,7 @@ pub struct Button {
     rect: Rect,
     active_img: Option<Image>,
     active_color: Option<Color>,
-    img: Option<Rc<RefCell<Image>>>,
+    img: Option<Image>,
     color: Option<Color>,
     gesture_detector: GestureDetector,
 }
@@ -319,10 +319,10 @@ impl Button {
             active_img: None,
             img: None,
             color: None,
-            gesture_detector: GestureDetector::new(),
+            gesture_detector: GestureDetector::new(vec![GestureDetectorTypes::Tap]),
         }
     }
-    pub fn set_img(&mut self, img: Rc<RefCell<Image>>) {
+    pub fn set_img(&mut self, img: Image) {
         self.img = Some(img);
     }
 }
@@ -330,7 +330,7 @@ impl Button {
 impl Display for Button {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         if let Some(ref img) = self.img {
-            img.borrow().render(canvas, self.rect);
+            img.render(canvas, self.rect);
         }
     }
     fn handle_events(&mut self, evt: &Event) -> Option<Action> {

@@ -13,7 +13,7 @@ use std::cell::{RefCell};
 use std::time::{Duration};
 use std::mem::drop;
 use transition::Transition;
-use gesture::{GestureDetector, GestureEvent};
+use gesture::{GestureDetector, GestureEvent, GestureDetectorTypes};
 use utils::mean::Mean;
 use config::{Config};
 use actions::Action;
@@ -47,7 +47,9 @@ impl GalleryView {
             dragging: false,
             translate_y: 0,
             translate_y_pre: 0,
-            gesture_detector: GestureDetector::new(),
+            gesture_detector: GestureDetector::new(
+                vec![GestureDetectorTypes::Pan,
+                     GestureDetectorTypes::Tap]),
         };
         Rc::new(RefCell::new(g))
     }
@@ -155,9 +157,10 @@ impl Preview {
         let next = ScrollView::new(Image::new_with_dimension("".to_owned(), width, height));
         next.borrow_mut().set_rect(0, 0, width, height);
 
-
-        let mut back_btn = Button::new(Rect::new(width as i32 - 48 - 10, 10, 48, 48));
-        back_btn.set_img(Image::new_with_dimension_local("../assets/list.png".to_owned(), 48, 48));
+        let size = 36_u32;
+        let mut back_btn = Button::new(Rect::new(width as i32 - size as i32 - 10, 10, size, size));
+        let img = Image::new_with_dimension_local("../assets/list.png".to_owned(), size, size);
+        back_btn.set_img(img);
 
         let mut g = Preview {
             parent: Rc::downgrade(&parent),
@@ -171,7 +174,9 @@ impl Preview {
             translate_x_pre: 0,
             img_idx: 0,
             transition: None,
-            gesture_detector: GestureDetector::new(),
+            gesture_detector: GestureDetector::new(
+                vec![GestureDetectorTypes::Pan,
+                     GestureDetectorTypes::Tap]),
             back_btn,
         };
         g.set_curr_image(0);

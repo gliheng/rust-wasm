@@ -32,19 +32,29 @@ pub enum GestureEvent {
 }
 
 
+pub enum GestureDetectorTypes {
+    Tap, Pan,
+}
+
 pub struct GestureDetector {
     pool: Vec<GestureEvent>,
     detectors: Vec<Box<Detector>>,
 }
 
 impl GestureDetector {
-    pub fn new() -> GestureDetector {
+    pub fn new(types: Vec<GestureDetectorTypes>) -> GestureDetector {
         GestureDetector {
             pool: vec![],
-            detectors: vec![
-                Box::new(TapDetector::new()),
-                Box::new(PanDetector::new())
-            ]
+            detectors: types.iter().map(|t| {
+                match t {
+                    &GestureDetectorTypes::Tap => {
+                        Box::new(TapDetector::new()) as Box<Detector>
+                    },
+                    &GestureDetectorTypes::Pan => {
+                        Box::new(PanDetector::new()) as Box<Detector>
+                    },
+                }
+            }).collect()
         }
     }
     pub fn feed(&mut self, evt: &Event) {
