@@ -28,43 +28,45 @@ pub trait Display {
     fn update(&mut self) {}
 }
 
-pub struct Scene {
-    children: Vec<Rc<RefCell<Display>>>,
-    listeners: Vec<Rc<RefCell<Display>>>,
+pub struct Stage {
+    children: HashMap<String, Rc<RefCell<Display>>>,
+    activeScene: Option<Rc<RefCell<Display>>>,
 }
 
-impl Scene {
-    pub fn new(tc: TextureCreator<WindowContext>) -> Rc<RefCell<Scene>> {
+impl Stage {
+    pub fn new(tc: TextureCreator<WindowContext>) -> Rc<RefCell<Stage>> {
         unsafe {
             TEXTURE_CREATOR = Some(tc);
         }
-        Rc::new(RefCell::new(Scene {
-            children: Vec::new(),
-            listeners: Vec::new(),
+        Rc::new(RefCell::new(Stage {
+            children: HashMap::new(),
+            activeScene: None,
         }))
     }
-    pub fn add_child(&mut self, c: Rc<RefCell<Display>>) {
-        self.children.push(c.clone());
-        if c.borrow().is_interactive() {
-            self.listeners.push(c.clone());
+    pub fn add_scene(&mut self, key: &str, c: Rc<RefCell<Display>>) {
+        self.children.insert(key.to_owned(), c);
+    }
+    pub fn start(&mut self, key: &str) {
+        if let Some(s) = self.children.get(key) {
+            self.activeScene = Some(s.clone());
         }
     }
     pub fn update(&self) {
-        for c in &self.listeners {
-            c.borrow_mut().update();
+        if let Some(ref scene) = self.activeScene {
+            scene.borrow_mut().update();
         }
     }
 }
 
-impl Display for Scene {
+impl Display for Stage {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-        for c in &self.children {
-            c.borrow().render(canvas, rect.clone());
+        if let Some(ref scene) = self.activeScene {
+            scene.borrow().render(canvas, rect.clone());
         }
     }
     fn handle_events(&mut self, event: &Event) {
-        for c in &self.listeners {
-            c.borrow_mut().handle_events(&event);
+        if let Some(ref scene) = self.activeScene {
+            scene.borrow_mut().handle_events(&event);
         }
     }
 }

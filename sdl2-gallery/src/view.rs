@@ -1,7 +1,7 @@
 // TODO this can be dropped
 // translate_x to f32
 
-use display::{Image, Scene, Display, FillMode};
+use display::{Image, Stage, Display, FillMode};
 use model::Gallery;
 use sdl2::video::{Window, WindowContext};
 use sdl2::render::{Canvas, TextureCreator};
@@ -22,7 +22,7 @@ const THUMB_H: u32 = 100;
 const THUMB_GAP: u32 = 10;
 
 pub struct GalleryView {
-    parent: Weak<RefCell<Display>>,
+    parent: Weak<RefCell<Stage>>,
     images: Vec<Rc<RefCell<Image>>>,
     dragging: bool,
     translate_y: i32,
@@ -31,10 +31,8 @@ pub struct GalleryView {
 }
 
 impl GalleryView {
-    pub fn new(parent: Rc<RefCell<Scene>>) -> Rc<RefCell<GalleryView>> {
+    pub fn new(parent: Rc<RefCell<Stage>>) -> Rc<RefCell<GalleryView>> {
         let config = Config::get_gallery().unwrap();
-        let width = *Config::get_u32("width").unwrap();
-        let height = *Config::get_u32("height").unwrap();
         let images = config.pics.iter().map(|ref p| {
             let img = Image::new_with_dimension(p.preview.to_owned(), THUMB_W, THUMB_H);
             img.borrow_mut().set_fill(FillMode::COVER);
@@ -101,8 +99,9 @@ impl Display for GalleryView {
                     let i = self.image_under_point(x as u32, y as u32);
 
                     println!("tap! {} {} {:?}", x, y, i);
-
-                    
+                    // if let Some(p) = self.parent.upgrade() {
+                    //     p.borrow_mut().start("preview");
+                    // }
                 },
                 &GestureEvent::PanStart { .. } => {
                     self.dragging = true;
@@ -124,7 +123,7 @@ impl Display for GalleryView {
 const PREVIEW_GAP: i32 = 30;
 
 pub struct Preview {
-    parent: Weak<RefCell<Scene>>,
+    parent: Weak<RefCell<Stage>>,
     prev: Rc<RefCell<ScrollView>>,
     curr: Rc<RefCell<ScrollView>>,
     next: Rc<RefCell<ScrollView>>,
@@ -139,7 +138,7 @@ pub struct Preview {
 }
 
 impl Preview {
-    pub fn new(parent: Rc<RefCell<Scene>>) -> Rc<RefCell<Preview>> {
+    pub fn new(parent: Rc<RefCell<Stage>>) -> Rc<RefCell<Preview>> {
 
         let width = *Config::get_u32("width").unwrap();
         let height = *Config::get_u32("height").unwrap();

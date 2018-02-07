@@ -27,7 +27,7 @@ use sdl2::rect::Rect;
 use sdl2::ttf;
 use model::Gallery;
 use view::{GalleryView, Preview};
-use display::{Scene, Display};
+use display::{Stage, Display};
 use std::rc::Rc;
 use frame_rate::FrameRate;
 use utils::glyph_renderer::GlyphRenderer;
@@ -67,7 +67,6 @@ fn main() {
 
     let black = Color::RGB(0, 0, 0);
     let mut events = ctx.event_pump().unwrap();
-    let scene = Scene::new(canvas.texture_creator());
 
     let mut config = Config::get_instance();
     if let Ok(mut c) = config.write() {
@@ -76,7 +75,13 @@ fn main() {
         c.set("height", &height);
     }
 
-    scene.borrow_mut().add_child(GalleryView::new(scene.clone()));
+    let stage = Stage::new(canvas.texture_creator());
+    {
+        let mut s = stage.borrow_mut();
+        s.add_scene("gallery", GalleryView::new(stage.clone()));
+        s.add_scene("preview", Preview::new(stage.clone()));
+        s.start("gallery");
+    }
 
     let ttf_context = ttf::init().unwrap();
     let mut glyph_renderer = None;
@@ -101,12 +106,12 @@ fn main() {
                 },
                 _ => {}
             }
-            scene.borrow_mut().handle_events(&event);
+            stage.borrow_mut().handle_events(&event);
         }
         canvas.set_draw_color(black);
         canvas.clear();
-        scene.borrow().update();
-        scene.borrow().render(&mut canvas, Rect::new(0, 0, width, height));
+        stage.borrow().update();
+        stage.borrow().render(&mut canvas, Rect::new(0, 0, width, height));
 
         // render framerate
         if let Some(ref mut r) = glyph_renderer {
