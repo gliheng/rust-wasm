@@ -16,6 +16,7 @@ mod view;
 mod transition;
 mod config;
 mod gesture;
+mod actions;
 
 use std::process;
 use stdweb::unstable::TryInto;

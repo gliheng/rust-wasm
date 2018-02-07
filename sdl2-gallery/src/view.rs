@@ -1,7 +1,7 @@
 // TODO this can be dropped
 // translate_x to f32
 
-use display::{Image, Stage, Display, FillMode};
+use display::{Image, Button, Stage, Display, FillMode};
 use model::Gallery;
 use sdl2::video::{Window, WindowContext};
 use sdl2::render::{Canvas, TextureCreator};
@@ -16,6 +16,8 @@ use transition::Transition;
 use gesture::{GestureDetector, GestureEvent};
 use utils::mean::Mean;
 use config::{Config};
+use actions::Action;
+use std::any::Any;
 
 const THUMB_W: u32 = 100;
 const THUMB_H: u32 = 100;
@@ -35,7 +37,7 @@ impl GalleryView {
         let config = Config::get_gallery().unwrap();
         let images = config.pics.iter().map(|ref p| {
             let img = Image::new_with_dimension(p.preview.to_owned(), THUMB_W, THUMB_H);
-            img.borrow_mut().set_fill(FillMode::COVER);
+            img.borrow_mut().set_fill(FillMode::Cover);
             img
         }).collect();
 
@@ -87,7 +89,7 @@ impl Display for GalleryView {
         }
         canvas.set_clip_rect(None);
     }
-    fn handle_events(&mut self, evt: &Event) {
+    fn handle_events(&mut self, evt: &Event) -> Option<Action> {
         self.gesture_detector.feed(evt);
 
         // single touch
@@ -98,10 +100,9 @@ impl Display for GalleryView {
                     let y = y * (*Config::get_u32("height").unwrap()) as f32;
                     let i = self.image_under_point(x as u32, y as u32);
 
-                    println!("tap! {} {} {:?}", x, y, i);
-                    // if let Some(p) = self.parent.upgrade() {
-                    //     p.borrow_mut().start("preview");
-                    // }
+                    if let Some(ii) = i {
+                        return Some(Action::ShowPreview(ii));
+                    }
                 },
                 &GestureEvent::PanStart { .. } => {
                     self.dragging = true;
@@ -114,6 +115,7 @@ impl Display for GalleryView {
                 _ => ()
             }
         }
+        None
     }
     fn is_interactive(&self) -> bool {
         true
@@ -135,6 +137,7 @@ pub struct Preview {
     img_idx: usize,
     transition: Option<Transition>,
     gesture_detector: GestureDetector,
+    back_btn: Button,
 }
 
 impl Preview {
@@ -152,6 +155,10 @@ impl Preview {
         let next = ScrollView::new(Image::new_with_dimension("".to_owned(), width, height));
         next.borrow_mut().set_rect(0, 0, width, height);
 
+
+        let mut back_btn = Button::new(Rect::new(width as i32 - 48 - 10, 10, 48, 48));
+        back_btn.set_img(Image::new_with_dimension_local("../assets/list.png".to_owned(), 48, 48));
+
         let mut g = Preview {
             parent: Rc::downgrade(&parent),
             prev,
@@ -165,6 +172,7 @@ impl Preview {
             img_idx: 0,
             transition: None,
             gesture_detector: GestureDetector::new(),
+            back_btn,
         };
         g.set_curr_image(0);
         Rc::new(RefCell::new(g))
@@ -256,8 +264,10 @@ impl Display for Preview {
             r2.offset(self.translate_x + self.width as i32 + PREVIEW_GAP, 0);
             self.next.borrow().render(canvas, r2);
         }
+
+        self.back_btn.render(canvas, rect);
     }
-    fn handle_events(&mut self, evt: &Event) {
+    fn handle_events(&mut self, evt: &Event) -> Option<Action> {
         let config = Config::get_gallery().unwrap();
         self.gesture_detector.feed(evt);
 
@@ -351,6 +361,8 @@ impl Display for Preview {
                 _ => ()
             }
         }
+
+        return self.back_btn.handle_events(evt);
     }
     fn update(&mut self) {
         // update scrollview slide animation
@@ -375,6 +387,13 @@ impl Display for Preview {
             if !in_transition {
                 self.transition = None;
                 self.rotate();
+            }
+        }
+    }
+    fn on_start(&mut self, params: &Option<Box<Any>>) {
+        if let &Some(ref p) = params {
+            if let Some(n) = p.downcast_ref::<usize>() {
+                self.set_curr_image(*n);
             }
         }
     }
