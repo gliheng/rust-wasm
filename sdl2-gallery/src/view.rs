@@ -1,6 +1,8 @@
-// TODO this can be dropped
-// translate_x to f32
-
+use std::any::Any;
+use std::f32::consts::PI;
+use std::rc::{Rc, Weak};
+use std::cell::{RefCell};
+use std::time::{Duration};
 use display::{Image, Button, Stage, Display, FillMode};
 use model::Gallery;
 use sdl2::video::{Window, WindowContext};
@@ -8,17 +10,13 @@ use sdl2::render::{Canvas, TextureCreator};
 use sdl2::rect::{Rect, Point};
 use sdl2::event::Event;
 use sdl2::touch::num_touch_fingers;
-use std::rc::{Rc, Weak};
-use std::cell::{RefCell};
-use std::time::{Duration};
-use std::mem::drop;
 use transition::Transition;
 use gesture::{GestureDetector, GestureEvent, GestureDetectorTypes};
 use utils::mean::Mean;
 use config::{Config};
 use actions::Action;
-use std::any::Any;
 
+const FRICTION: f32 = 2.;
 const THUMB_W: u32 = 100;
 const THUMB_H: u32 = 100;
 const THUMB_GAP: u32 = 10;
@@ -27,9 +25,13 @@ pub struct GalleryView {
     parent: Weak<RefCell<Stage>>,
     images: Vec<Rc<RefCell<Image>>>,
     dragging: bool,
-    translate_y: i32,
-    translate_y_pre: i32,
+    translate_y: f32,
+    translate_y_pre: f32,
     gesture_detector: GestureDetector,
+    transition: Option<Transition>,
+    layout: (u32, u32, u32, u32, i32),  // n items each row, each item with width, height
+    mean_y: Mean<f32>,     // mean are to track mean move speed
+    dy: f32, // verticle move speed
 }
 
 impl GalleryView {
@@ -45,32 +47,39 @@ impl GalleryView {
             parent: Rc::downgrade(&parent),
             images,
             dragging: false,
-            translate_y: 0,
-            translate_y_pre: 0,
+            translate_y: 0.,
+            translate_y_pre: 0.,
             gesture_detector: GestureDetector::new(
                 vec![GestureDetectorTypes::Pan,
                      GestureDetectorTypes::Tap]),
+            transition: None,
+            layout: GalleryView::get_row_layout(config.pics.len()),
+            mean_y: Mean::new(3),
+            dy: 0.,
         };
         Rc::new(RefCell::new(g))
     }
-    fn image_under_point(&self, x: u32, y: u32) -> Option<usize> {
-        let (n, w, h) = self.get_row_layout();
-        for i in 0..self.images.len() {
-            let (rx, ry) = self.item_center(n, w, h, i);
-            let r = Rect::from_center(Point::new(rx as i32, ry as i32), w, h);
-            if r.contains_point(Point::new(x as i32, y as i32)) {
-                return Some(i)
-            }
-        }
-        None
-    }
-    fn get_row_layout(&self) -> (u32, u32, u32) {
+    fn get_row_layout(count: usize) -> (u32, u32, u32, u32, i32) {
         let width = *Config::get_u32("width").unwrap();
+        let height = *Config::get_u32("height").unwrap();
 
         // n items each row
         let n = ((width as f32 - THUMB_GAP as f32) / (THUMB_GAP + THUMB_W) as f32).floor() as u32;
         let w = (width - THUMB_GAP) / n - THUMB_GAP;
-        (n, w, w) // n items each row, each item with width w, height w
+        let h = w;
+        let total_height = (count as f32 / n as f32).ceil() as u32 * (h + THUMB_GAP) + THUMB_GAP;
+        (n, w, h, total_height, (height as i32 - total_height as i32).min(0))
+    }
+    fn image_under_point(&self, x: i32, y: i32) -> Option<usize> {
+        let (n, w, h, ..) = self.layout;
+        for i in 0..self.images.len() {
+            let (rx, ry) = self.item_center(n, w, h, i);
+            let r = Rect::from_center(Point::new(rx as i32, ry as i32), w, h);
+            if r.contains_point(Point::new(x, y)) {
+                return Some(i)
+            }
+        }
+        None
     }
     fn item_center(&self, n: u32, w: u32, h: u32, i: usize) -> (u32, u32) {
         let i: u32 = i as u32;
@@ -78,29 +87,94 @@ impl GalleryView {
         let y = THUMB_GAP + h / 2 + (h + THUMB_GAP) * (i / n);
         (x, y)
     }
+    fn move_by(&mut self, dy: f32) {
+        let ty = self.translate_y + dy;
+        let d;
+        if ty > 0. && dy > 0. {
+            d = ty / 100.;
+        } else if ty < self.layout.4 as f32 {
+            d = (self.layout.4 as f32 - ty) / 100.;
+        } else {
+            d = 0.;
+        }
+
+        // get a mean to calc motion speed
+        self.mean_y.push(dy);
+
+        self.dy = self.mean_y.get() as f32;
+        // apply damping past border
+        let dy = dy * if d < PI / 2. { d.cos() } else { 0. };
+        self.translate_y += dy;
+    }
+    fn snap_to_border(&mut self) {
+        let min_y = self.layout.4;
+        if self.translate_y > 0. {
+            // below top
+            self.transition = Some(Transition::new(self.translate_y as i32,
+                                                   0,
+                                                   Duration::from_millis(300)));
+            self.dy = 0.; // snap does not need slide behavior
+        } else if self.translate_y < min_y as f32 {
+            // above bottom
+            self.transition = Some(Transition::new(self.translate_y as i32,
+                                                   min_y,
+                                                   Duration::from_millis(300)));
+            self.dy = 0.; // snap does not need slide behavior
+        }
+    }
 }
 impl Display for GalleryView {
-    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-        let (n, w, h) = self.get_row_layout();
+    fn is_interactive(&self) -> bool {
+        true
+    }
+    fn update(&mut self) {
+        let mut in_transition = !self.dragging && self.transition.is_some();
+        if in_transition {
+            // transition back to border after drag
+            if let Some(ref mut transition) = self.transition {
+                if transition.at_end() {
+                    // end transition
+                    in_transition = false;
+                    self.translate_y = transition.target_val() as f32;
+                } else {
+                    self.translate_y = transition.step() as f32;
+                }
+            }
+            if !in_transition {
+                self.transition = None;
+            }
+        } else if !self.dragging && self.dy != 0. {
+            // slide
+            let ty = self.translate_y;
+            // apply more friction if sliding past border
+            let f = if ty > 0. {
+                ty
+            } else if ty < self.layout.4 as f32 {
+                self.layout.4 as f32 - ty
+            } else {
+                0.
+            } / 5.;
 
-        canvas.set_clip_rect(rect);
-        for (i, img) in self.images.iter().enumerate() {
-            let (x, y) = self.item_center(n, w, h, i);
-            let r = Rect::from_center(Point::new(x as i32, y as i32), w, h);
-            img.borrow().render(canvas, r);
+            let dy = apply_friction(f + FRICTION, self.dy);
+            self.move_by(dy);
+            self.dy = dy;
+
+            if self.dy.abs() == 0. {
+                // slide stopped
+                self.snap_to_border();
+                return;
+            }
         }
-        canvas.set_clip_rect(None);
     }
     fn handle_events(&mut self, evt: &Event) -> Option<Action> {
         self.gesture_detector.feed(evt);
 
-        // single touch
         for ref event in self.gesture_detector.poll() {
             match event {
                 &GestureEvent::Tap(x, y) => {
                     let x = x * (*Config::get_u32("width").unwrap()) as f32;
                     let y = y * (*Config::get_u32("height").unwrap()) as f32;
-                    let i = self.image_under_point(x as u32, y as u32);
+                    let i = self.image_under_point(x as i32, y as i32 - self.translate_y as i32);
 
                     if let Some(ii) = i {
                         return Some(Action::ShowPreview(ii));
@@ -109,18 +183,33 @@ impl Display for GalleryView {
                 &GestureEvent::PanStart { .. } => {
                     self.dragging = true;
                 },
-                &GestureEvent::Pan { x, y, dx, dy, .. } => {
+                &GestureEvent::Pan { dy, .. } => {
+                    let height = *Config::get_u32("height").unwrap();
+                    let dy = dy as f32 * height as f32;
+                    self.move_by(dy);
                 },
                 &GestureEvent::PanEnd { .. } => {
                     self.dragging = false;
+                    self.snap_to_border();
                 },
                 _ => ()
             }
         }
         None
     }
-    fn is_interactive(&self) -> bool {
-        true
+    fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
+        let (n, w, h, ..) = self.layout;
+
+        canvas.set_clip_rect(rect);
+        for (i, img) in self.images.iter().enumerate() {
+            let (x, y) = self.item_center(n, w, h, i);
+            let y = y as i32 + self.translate_y as i32;
+            let r = Rect::from_center(Point::new(x as i32, y), w, h);
+            if r.bottom() > rect.top() && r.top() < rect.bottom() {
+                img.borrow().render(canvas, r);
+            }
+        }
+        canvas.set_clip_rect(None);
     }
 }
 
@@ -303,8 +392,8 @@ impl Display for Preview {
                         self.translate_x_pre = self.translate_x;
                     },
                     &GestureEvent::Pan { x, y, mut dx, mut dy, .. } => {
-                        dx = dx * self.width as f32;
-                        dy = dy * self.height as f32;
+                        dx *= self.width as f32;
+                        dy *= self.height as f32;
 
                         let mut scrollview = self.curr.borrow_mut();
                         // if move is in opposite direction with outer tranlation
@@ -382,11 +471,12 @@ impl Display for Preview {
         let mut in_transition = !self.dragging && self.transition.is_some();
         if in_transition {
             if let Some(ref mut transition) = self.transition {
-                self.translate_x = transition.step() as i32;
                 if transition.at_end() {
                     // end transition
                     in_transition = false;
-                    // self.transition_x = transition.target_val();
+                    self.translate_x = transition.target_val();
+                } else {
+                    self.translate_x = transition.step() as i32;
                 }
             }
             if !in_transition {
@@ -472,13 +562,12 @@ impl ScrollView {
             return;
         }
 
+        self.dx = apply_friction(FRICTION, self.dx);
+        self.dy = apply_friction(FRICTION, self.dy);
+
         let offset_x = self.offset_x + self.dx;
         let offset_y = self.offset_y + self.dy;
         self.set_pos(offset_x, offset_y);
-
-        let friction = 0.7;
-        self.dx = apply_friction(friction, self.dx);
-        self.dy = apply_friction(friction, self.dy);
     }
 
     fn set_rect(&mut self, x: i32, y: i32, w: u32, h: u32) {
@@ -583,9 +672,14 @@ impl Display for ScrollView {
 }
 
 fn apply_friction(friction: f32, dx: f32) -> f32 {
-    if dx.abs() < friction {
-        0f32
+    let dx = if dx.abs() < friction {
+        0.
     } else {
-        dx + (if dx > 0f32 {-friction} else {friction})
+        dx + (if dx > 0f32 { -friction } else { friction })
+    };
+
+    if dx.abs() < 0.00001 {
+        return 0.
     }
+    dx
 }

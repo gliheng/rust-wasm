@@ -46,7 +46,7 @@ impl Transition {
         // c as f64 * t / d + b as f64
         // easeOutQuad
         t /= d;
-	    return -c as f64 * t * (t-2.) + b as f64;
+	    return -c as f64 * t * (t - 2.) + b as f64;
     }
     fn to_f64(d: Duration) -> f64 {
         d.as_secs() as f64

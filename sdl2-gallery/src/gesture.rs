@@ -75,7 +75,7 @@ trait Detector {
 
 const TAP_DURATION: u32 = 150;
 const DOUBLETAP_DURATION: u32 = 300;
-const TAP_DIST: f32 = 0.01;
+const TAP_DIST: f32 = 0.03;
 
 pub struct TapDetector {
     prev_finger_down: Option<Event>,
