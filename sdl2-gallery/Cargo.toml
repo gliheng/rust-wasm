@@ -9,6 +9,10 @@ serde = "1.0.27"
 serde_derive = "1.0.27"
 lazy_static = "1.0.0"
 
+[features]
+default = []
+fps = []
+
 [dependencies.sdl2]
 version = "0.31.0"
 default-features = false

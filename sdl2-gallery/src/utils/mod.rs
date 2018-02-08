@@ -1,4 +1,5 @@
 pub mod mean;
+#[cfg(feature = "fps")]
 pub mod glyph_renderer;
 
 use stdweb::unstable::TryInto;
