@@ -57,6 +57,7 @@ impl GalleryView {
             mean_y: Mean::new(3),
             dy: 0.,
         };
+        g.load_images_inview();
         Rc::new(RefCell::new(g))
     }
     fn get_row_layout(count: usize) -> (u32, u32, u32, u32, i32) {
@@ -105,6 +106,19 @@ impl GalleryView {
         // apply damping past border
         let dy = dy * if d < PI / 2. { d.cos() } else { 0. };
         self.translate_y += dy;
+    }
+    fn load_images_inview(&self) {
+        let h = (THUMB_GAP + self.layout.2) as f32;
+        let n = self.layout.0 as usize;
+        let height = *Config::get_u32("height").unwrap();
+        let rs = (-self.translate_y / h).max(0.) as usize;
+        let re = ((-self.translate_y + height as f32 - THUMB_GAP as f32) / h).max(0.).ceil() as usize;
+        // [rs, re) row should be loaded
+        for i in rs*n .. re*n {
+            if i < self.images.len() {
+                self.images[i].borrow().load();
+            }
+        }
     }
     fn snap_to_border(&mut self) {
         let min_y = self.layout.4;
@@ -161,6 +175,7 @@ impl Display for GalleryView {
 
             if self.dy.abs() == 0. {
                 // slide stopped
+                self.load_images_inview();
                 self.snap_to_border();
                 return;
             }
@@ -301,6 +316,7 @@ impl Preview {
                 img.set_src("");
             } else if let Some(pic) = config.pics.get(i as usize) {
                 img.set_src(&pic.url);
+                img.load();
             } else {
                 img.set_src("");
             }
@@ -313,6 +329,7 @@ impl Preview {
             let mut img = scrollview.content.borrow_mut();
             if let Some(pic) = config.pics.get(idx) {
                 img.set_src(&pic.url);
+                img.load();
             } else {
                 img.set_src("");
             }
@@ -325,6 +342,7 @@ impl Preview {
             let mut img = scrollview.content.borrow_mut();
             if let Some(pic) = config.pics.get(idx + 1) {
                 img.set_src(&pic.url);
+                img.load();
             } else {
                 img.set_src("");
             }

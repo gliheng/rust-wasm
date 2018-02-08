@@ -111,6 +111,10 @@ pub enum FillMode {
     Contain,
 }
 
+static mut DEFAULT_LOADED: bool = false;
+const DEFAULT_IMG: &'static str = "../assets/iconmonstr-picture-1-240.png";
+/// image from network are not loaded when you call load
+/// image from localdisk are loaded eagerly
 pub struct Image {
     dirty: bool,
     src: String,
@@ -122,10 +126,6 @@ pub struct Image {
 
 impl Image {
     pub fn new(src: String) -> Rc<RefCell<Image>> {
-        if src != "" {
-            load_img(&src);
-        }
-
         Rc::new(RefCell::new(Image {
             dirty: false,
             src,
@@ -146,9 +146,6 @@ impl Image {
         }
     }
     pub fn new_with_dimension(src: String, w: u32, h: u32) -> Rc<RefCell<Image>> {
-        if src != "" {
-            load_img(&src);
-        }
         Rc::new(RefCell::new(Image {
             dirty: false,
             src,
@@ -156,6 +153,22 @@ impl Image {
             h,
             ..Default::default()
         }))
+    }
+    pub fn load(&self) {
+        unsafe {
+            if !DEFAULT_LOADED {
+                load_local_img(DEFAULT_IMG);
+                DEFAULT_LOADED = true;
+            }
+        }
+        load_img(&self.src);
+    }
+    pub fn is_loaded(&self) -> bool {
+        if self.local {
+            return true;
+        }
+        let m = LOAD_REGISTER.lock().unwrap();
+        m.get(&self.src).is_some()
     }
     pub fn get_src(&mut self) -> &str {
         &self.src
@@ -204,7 +217,8 @@ impl Display for Image {
         let m = LOAD_REGISTER.lock().unwrap();
         let prefix = if self.local { LOCAL_IMG_PREFIX } else { "" };
         let src = prefix.to_owned() + &self.src;
-        if let Some(&SizedTexture(img_w, img_h, ref tex)) = m.get(&src) {
+        let texture = m.get(&src).or_else(|| m.get(&(LOCAL_IMG_PREFIX.to_owned() + DEFAULT_IMG)));
+        if let Some(&SizedTexture(img_w, img_h, ref tex)) = texture {
             let s_rect = Rect::new(0, 0, img_w, img_h);
 
             // work out render size
@@ -244,6 +258,9 @@ impl Default for Image {
 }
 
 pub fn load_img(src: &str) {
+    if src == "" {
+        return;
+    }
     // check if already loaded
     let m = LOAD_REGISTER.lock().unwrap();
     if m.get(src).is_some() {
