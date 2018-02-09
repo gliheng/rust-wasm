@@ -283,7 +283,6 @@ impl Preview {
                      GestureDetectorTypes::Tap]),
             back_btn,
         };
-        g.set_curr_image(0);
         Rc::new(RefCell::new(g))
     }
 
@@ -504,11 +503,13 @@ impl Display for Preview {
         }
     }
     fn on_start(&mut self, params: &Option<Box<Any>>) {
+        let mut i = 0;
         if let &Some(ref p) = params {
             if let Some(n) = p.downcast_ref::<usize>() {
-                self.set_curr_image(*n);
+                i = *n;
             }
         }
+        self.set_curr_image(i);
     }
     fn is_interactive(&self) -> bool {
         true

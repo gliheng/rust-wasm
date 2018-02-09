@@ -111,7 +111,7 @@ impl Detector for TapDetector {
                 let mut cancel = false;
                 if let Some(ref down) = self.prev_finger_down {
                     if let &Event::FingerDown {finger_id: finger_id0, x: x0, y: y0, ..} = down {
-                        if finger_id0 == finger_id && get_dist(x, y, x0, y0) >= 0.01 {
+                        if finger_id0 == finger_id && get_dist(x, y, x0, y0) >= 0.02 {
                             // moved too far, cancel the tap
                             cancel = true;
                         }

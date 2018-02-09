@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::default::Default;
 use std::os::raw::{c_void, c_char};
 use std::marker::{Send};
@@ -26,6 +26,7 @@ use gesture::{GestureDetector, GestureEvent, GestureDetectorTypes};
 static mut TEXTURE_CREATOR: Option<TextureCreator<WindowContext>> = None;
 lazy_static!{
     static ref LOAD_REGISTER: Mutex<HashMap<String, SizedTexture>> = Mutex::new(HashMap::new());
+    static ref LOADING_IMGS: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
 }
 
 pub trait Display {
@@ -155,13 +156,21 @@ impl Image {
         }))
     }
     pub fn load(&self) {
+        if self.src == "" {
+            return;
+        }
+        // load default image is not loaded
         unsafe {
             if !DEFAULT_LOADED {
                 load_local_img(DEFAULT_IMG);
                 DEFAULT_LOADED = true;
             }
         }
-        load_img(&self.src);
+        if self.local {
+            load_local_img(&self.src);
+        } else {
+            load_img(&self.src);
+        }
     }
     pub fn is_loaded(&self) -> bool {
         if self.local {
@@ -175,8 +184,8 @@ impl Image {
     }
     pub fn set_src(&mut self, src: &str) {
         self.src = src.to_string();
-        if src != "" {
-            load_img(src);
+        if self.local {
+            self.load();
         }
     }
     pub fn set_fill(&mut self, v: FillMode) {
@@ -214,6 +223,9 @@ impl Image {
 
 impl Display for Image {
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
+        if self.src == "" {
+            return;
+        }
         let m = LOAD_REGISTER.lock().unwrap();
         let prefix = if self.local { LOCAL_IMG_PREFIX } else { "" };
         let src = prefix.to_owned() + &self.src;
@@ -261,12 +273,16 @@ pub fn load_img(src: &str) {
     if src == "" {
         return;
     }
+    if LOADING_IMGS.lock().unwrap().contains(src) {
+        return;
+    }
     // check if already loaded
     let m = LOAD_REGISTER.lock().unwrap();
     if m.get(src).is_some() {
         return;
     }
 
+    LOADING_IMGS.lock().unwrap().insert(src.to_owned());
     let bsrc = Box::into_raw(Box::new(src.to_string()));
     let ext = (match src.rfind('.') {
         Some(i) => &src[i+1..],
@@ -379,6 +395,9 @@ extern "C" fn loaded(src: *const c_void, file: *mut c_char) {
         let mut m = LOAD_REGISTER.lock().unwrap();
         let src = Box::from_raw(src as *mut String);
         let file = CString::from_raw(file).into_string().unwrap();
+
+        LOADING_IMGS.lock().unwrap().remove(&*src);
+
         if let Ok(surf) = Surface::from_file(file) {
             if let Some(ref tc) = TEXTURE_CREATOR {
                 let w = surf.width();
@@ -395,6 +414,7 @@ extern "C" fn loaded(src: *const c_void, file: *mut c_char) {
 extern "C" fn load_err(src: *const c_void) {
     unsafe {
         let src = Box::from_raw(src as *mut String);
+        LOADING_IMGS.lock().unwrap().remove(&*src);
         println!("load failed! src: {}", src);
     }
 }
