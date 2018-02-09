@@ -1,3 +1,5 @@
+#![recursion_limit="128"]
+
 #[macro_use]
 extern crate stdweb;
 extern crate sdl2;
@@ -30,6 +32,7 @@ use view::{GalleryView, Preview};
 use display::{Stage, Display};
 use std::rc::Rc;
 use config::Config;
+use sdl2::image::{self, INIT_JPG, INIT_PNG};
 #[cfg(feature = "fps")]
 use frame_rate::FrameRate;
 #[cfg(feature = "fps")]
@@ -47,6 +50,8 @@ fn main() {
     let gallery: Gallery = gallery.try_into().unwrap();
 
     let ctx = sdl2::init().unwrap();
+    let _ = image::init(INIT_PNG | INIT_JPG).unwrap();
+
     let (width, height) = utils::get_window_dimensiton();
     let video = ctx.video().unwrap();
 

@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::collections::{HashMap, HashSet};
 use std::default::Default;
-use std::os::raw::{c_void, c_char};
 use std::marker::{Send};
 use std::ffi::{CString};
 use std::sync::Mutex;
@@ -283,56 +282,25 @@ pub fn load_img(src: &str) {
     }
 
     LOADING_IMGS.lock().unwrap().insert(src.to_owned());
-    let bsrc = Box::into_raw(Box::new(src.to_string()));
-    let ext = (match src.rfind('.') {
-        Some(i) => &src[i+1..],
-        None => "",
-    }).to_string();
-
-    utils::fetch(src, move |buf: TypedArray<u8>| {
-        use emscripten::{emscripten};
-        let v = buf.to_vec();
-        unsafe {
-            emscripten::emscripten_run_preload_plugins_data(
-                v.as_ptr(),
-                v.len(),
-                CString::new(ext).unwrap().as_ptr(),
-                bsrc as *const c_void,
-                loaded, load_err
-            );
-        }
+    let src2 = src.to_owned();
+    let src3 = src.to_owned();
+    utils::fetch(src, move |file| {
+        loaded(&src2, &file)
+    }, move || {
+        load_err(&src3);
     });
 }
 
 const LOCAL_IMG_PREFIX: &'static str = "!local:";
-pub fn load_local_img(src: &str) {
-    let src2 = LOCAL_IMG_PREFIX.to_owned() + src;
+pub fn load_local_img(file: &str) {
+    let src = LOCAL_IMG_PREFIX.to_owned() + file;
     // check if already loaded
     let m = LOAD_REGISTER.lock().unwrap();
-    if m.get(&src2).is_some() {
+    if m.get(&src).is_some() {
         return;
     }
 
-    let bsrc = Box::into_raw(Box::new(src2));
-    let ext = (match src.rfind('.') {
-        Some(i) => &src[i+1..],
-        None => "",
-    }).to_string();
-
-    let mut f = File::open(src).unwrap();
-    let mut v = Vec::new();
-    f.read_to_end(&mut v).unwrap();
-
-    use emscripten::{emscripten};
-    unsafe {
-        emscripten::emscripten_run_preload_plugins_data(
-            v.as_ptr(),
-            v.len(),
-            CString::new(ext).unwrap().as_ptr(),
-            bsrc as *const c_void,
-            loaded, load_err
-        );
-    }
+    loaded(&src, file);
 }
 
 pub struct Button {
@@ -390,31 +358,29 @@ impl Display for Button {
     }
 }
 
-extern "C" fn loaded(src: *const c_void, file: *mut c_char) {
+fn loaded(src: &str, file: &str) {
     unsafe {
         let mut m = LOAD_REGISTER.lock().unwrap();
-        let src = Box::from_raw(src as *mut String);
-        let file = CString::from_raw(file).into_string().unwrap();
-
-        LOADING_IMGS.lock().unwrap().remove(&*src);
+        LOADING_IMGS.lock().unwrap().remove(src);
 
         if let Ok(surf) = Surface::from_file(file) {
             if let Some(ref tc) = TEXTURE_CREATOR {
                 let w = surf.width();
                 let h = surf.height();
                 let tex = tc.create_texture_from_surface(surf).expect("failed to create texture fron surface");
-                m.insert(*src, SizedTexture(w, h, tex));
+                m.insert(src.to_owned(), SizedTexture(w, h, tex));
             } else {
                 println!("load err");
             }
+        } else {
+            println!("not image");
         }
     }
 }
 
-extern "C" fn load_err(src: *const c_void) {
+fn load_err(src: &str) {
     unsafe {
-        let src = Box::from_raw(src as *mut String);
-        LOADING_IMGS.lock().unwrap().remove(&*src);
+        LOADING_IMGS.lock().unwrap().remove(src);
         println!("load failed! src: {}", src);
     }
 }

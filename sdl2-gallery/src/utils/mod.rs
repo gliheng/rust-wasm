@@ -22,15 +22,22 @@ pub fn convert(total: f32, ratio: f32) -> f32 {
     total * ratio
 }
 
-pub fn fetch<F> (url: &str, cbk: F)
-    where F: FnOnce(TypedArray<u8>) + 'static {
+pub fn fetch<F, E> (url: &str, cbk: F, err: E)
+    where F: FnOnce(String) + 'static,
+          E: FnOnce() + 'static {
     js! {
+        var url = @{url};
         var cbk = @{Once(cbk)};
-        fetch(@{url})
+        fetch(url)
             .then(rsp => rsp.arrayBuffer())
             .then(ab => new Uint8Array(ab))
-            .then(function (buf) {
-                cbk(buf);
+            .then(function (data) {
+                // FIXME: naive implementation
+                var p = url.replace(new RegExp('/', 'g'), "_");
+                FS.writeFile(p, data, {encoding: "binary"});
+                cbk(p);
+            }, function() {
+                err();
             });
     };
 }
