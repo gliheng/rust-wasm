@@ -26,7 +26,6 @@ pub struct GalleryView {
     images: Vec<Rc<RefCell<Image>>>,
     dragging: bool,
     translate_y: f32,
-    translate_y_pre: f32,
     gesture_detector: GestureDetector,
     transition: Option<Transition>,
     layout: (u32, u32, u32, u32, i32),  // n items each row, each item with width, height
@@ -48,7 +47,6 @@ impl GalleryView {
             images,
             dragging: false,
             translate_y: 0.,
-            translate_y_pre: 0.,
             gesture_detector: GestureDetector::new(
                 vec![GestureDetectorTypes::Pan,
                      GestureDetectorTypes::Tap]),

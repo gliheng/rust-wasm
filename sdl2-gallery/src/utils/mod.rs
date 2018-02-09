@@ -32,10 +32,10 @@ pub fn fetch<F, E> (url: &str, cbk: F, err: E)
             .then(rsp => rsp.arrayBuffer())
             .then(ab => new Uint8Array(ab))
             .then(function (data) {
-                // FIXME: naive implementation
-                var p = url.replace(new RegExp('/', 'g'), "_");
+                var p = "tmp_img";
                 FS.writeFile(p, data, {encoding: "binary"});
                 cbk(p);
+                FS.unlink(p);
             }, function() {
                 err();
             });
