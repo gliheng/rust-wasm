@@ -21,6 +21,14 @@ const THUMB_W: u32 = 100;
 const THUMB_H: u32 = 100;
 const THUMB_GAP: u32 = 10;
 
+struct GalleryLayout {
+    n: u32,   // n items each row
+    item_width: u32, // each item with width
+    item_height: u32, // each item with height
+    scroll_height: u32, // scroll content height
+    max_scroll: i32,
+}
+
 pub struct GalleryView {
     parent: Weak<RefCell<Stage>>,
     images: Vec<Rc<RefCell<Image>>>,
@@ -28,7 +36,7 @@ pub struct GalleryView {
     translate_y: f32,
     gesture_detector: GestureDetector,
     transition: Option<Transition>,
-    layout: (u32, u32, u32, u32, i32),  // n items each row, each item with width, height
+    layout: GalleryLayout,
     mean_y: Mean<f32>,     // mean are to track mean move speed
     dy: f32, // verticle move speed
 }
@@ -58,7 +66,7 @@ impl GalleryView {
         g.load_images_inview();
         Rc::new(RefCell::new(g))
     }
-    fn get_row_layout(count: usize) -> (u32, u32, u32, u32, i32) {
+    fn get_row_layout(count: usize) -> GalleryLayout {
         let width = *Config::get_u32("width").unwrap();
         let height = *Config::get_u32("height").unwrap();
 
@@ -66,11 +74,11 @@ impl GalleryView {
         let n = ((width as f32 - THUMB_GAP as f32) / (THUMB_GAP + THUMB_W) as f32).floor() as u32;
         let w = (width - THUMB_GAP) / n - THUMB_GAP;
         let h = w;
-        let total_height = (count as f32 / n as f32).ceil() as u32 * (h + THUMB_GAP) + THUMB_GAP;
-        (n, w, h, total_height, (height as i32 - total_height as i32).min(0))
+        let scroll_height = (count as f32 / n as f32).ceil() as u32 * (h + THUMB_GAP) + THUMB_GAP;
+        GalleryLayout{n, item_width: w, item_height: h, scroll_height, max_scroll: (scroll_height as i32 - height as i32).max(0)}
     }
     fn image_under_point(&self, x: i32, y: i32) -> Option<usize> {
-        let (n, w, h, ..) = self.layout;
+        let GalleryLayout{ n, item_width: w, item_height: h, .. } = self.layout;
         for i in 0..self.images.len() {
             let (rx, ry) = self.item_center(n, w, h, i);
             let r = Rect::from_center(Point::new(rx as i32, ry as i32), w, h);
@@ -91,8 +99,8 @@ impl GalleryView {
         let d;
         if ty > 0. && dy > 0. {
             d = ty / 100.;
-        } else if ty < self.layout.4 as f32 {
-            d = (self.layout.4 as f32 - ty) / 100.;
+        } else if ty < -self.layout.max_scroll as f32 {
+            d = (- self.layout.max_scroll as f32 - ty) / 100.;
         } else {
             d = 0.;
         }
@@ -106,8 +114,8 @@ impl GalleryView {
         self.translate_y += dy;
     }
     fn load_images_inview(&self) {
-        let h = (THUMB_GAP + self.layout.2) as f32;
-        let n = self.layout.0 as usize;
+        let h = (THUMB_GAP + self.layout.item_height) as f32;
+        let n = self.layout.n as usize;
         let height = *Config::get_u32("height").unwrap();
         let rs = (-self.translate_y / h).max(0.) as usize;
         let re = ((-self.translate_y + height as f32 - THUMB_GAP as f32) / h).max(0.).ceil() as usize;
@@ -119,7 +127,7 @@ impl GalleryView {
         }
     }
     fn snap_to_border(&mut self) {
-        let min_y = self.layout.4;
+        let min_y = -self.layout.max_scroll;
         if self.translate_y > 0. {
             // below top
             self.transition = Some(Transition::new(self.translate_y as i32,
@@ -161,8 +169,8 @@ impl Display for GalleryView {
             // apply more friction if sliding past border
             let f = if ty > 0. {
                 ty
-            } else if ty < self.layout.4 as f32 {
-                self.layout.4 as f32 - ty
+            } else if ty < -self.layout.max_scroll as f32 {
+                - self.layout.max_scroll as f32 - ty
             } else {
                 0.
             } / 5.;
@@ -211,7 +219,7 @@ impl Display for GalleryView {
         None
     }
     fn render(&self, canvas: &mut Canvas<Window>, rect: Rect) {
-        let (n, w, h, ..) = self.layout;
+        let GalleryLayout{ n, item_width: w, item_height: h, .. } = self.layout;
 
         canvas.set_clip_rect(rect);
         for (i, img) in self.images.iter().enumerate() {

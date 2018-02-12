@@ -191,7 +191,7 @@ Module['FS_createPath']('/', 'assets', true, true);
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 172, "filename": "/assets/list.png"}, {"audio": 0, "start": 172, "crunched": 0, "end": 3617, "filename": "/assets/iconmonstr-picture-1-240.png"}, {"audio": 0, "start": 3617, "crunched": 0, "end": 146756, "filename": "/assets/icon.png"}, {"audio": 0, "start": 146756, "crunched": 0, "end": 183916, "filename": "/assets/Supermercado-Regular.ttf"}], "remote_package_size": 183916, "package_uuid": "bf39e21e-e44d-4035-8ab1-8ad231a4d2c6"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 172, "filename": "/assets/list.png"}, {"audio": 0, "start": 172, "crunched": 0, "end": 3617, "filename": "/assets/iconmonstr-picture-1-240.png"}, {"audio": 0, "start": 3617, "crunched": 0, "end": 146756, "filename": "/assets/icon.png"}, {"audio": 0, "start": 146756, "crunched": 0, "end": 183916, "filename": "/assets/Supermercado-Regular.ttf"}], "remote_package_size": 183916, "package_uuid": "e7256fd9-1b84-4cfb-a38d-65bb9e35569e"});
 
 })();
 
@@ -2041,7 +2041,7 @@ function _emscripten_asm_const_iiiii(code, a0, a1, a2, a3) {
 
 STATIC_BASE = GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 119344;
+STATICTOP = STATIC_BASE + 119456;
 /* global initializers */  __ATINIT__.push();
 
 
@@ -2050,7 +2050,7 @@ STATICTOP = STATIC_BASE + 119344;
 
 
 
-var STATIC_BUMP = 119344;
+var STATIC_BUMP = 119456;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
