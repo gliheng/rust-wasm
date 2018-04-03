@@ -1,0 +1,7 @@
+[package]
+name = "rust_loader"
+version = "0.1.0"
+authors = ["Amadeus <gliheng@gmail.com>"]
+
+[dependencies]
+num = "0.1.42"
