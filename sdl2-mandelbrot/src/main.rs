@@ -1,22 +1,24 @@
+extern crate sdl2;
+#[cfg(target_os = "emscripten")]
+#[macro_use]
+extern crate stdweb;
 extern crate num;
 
-use num::Complex;
+#[cfg(target_os = "emscripten")]
+mod emscripten;
+mod utils;
+mod app;
+mod mandelbrot;
 
-fn main() {}
+use app::App;
 
-#[no_mangle]
-pub fn add(a: i32, b: i32) -> i32 {
-    a + b
-}
+fn main() {
+    #[cfg(target_os = "emscripten")]
+    stdweb::initialize();
 
-fn escape_time(c: Complex<f64>, limit: u32) -> Option<u32> {
-    let mut z = Complex {re: .0, im: .0};
+    let mut app = App::new();
+    app.start();
 
-    for i in 0..limit {
-        if z.norm_sqr() > 4.0 {
-            return Some(i);
-        }
-    }
-
-    None
+    #[cfg(target_os = "emscripten")]
+    stdweb::event_loop();
 }
