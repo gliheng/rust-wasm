@@ -30,7 +30,7 @@ fn main() {
     #[cfg(target_os = "emscripten")]
     stdweb::initialize();
 
-    let (width, height) = utils::get_window_dimensiton();
+    let (width, height) = utils::get_window_dimention();
 
     let ctx = sdl2::init().unwrap();
     let video = ctx.video().unwrap();

@@ -7,7 +7,7 @@ use stdweb::web::TypedArray;
 use stdweb::Once;
 use sdl2::render::Texture;
 
-pub fn get_window_dimensiton() -> (u32, u32) {
+pub fn get_window_dimention() -> (u32, u32) {
     let w = js! {
         return document.body.clientWidth;
     };

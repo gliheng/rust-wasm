@@ -52,7 +52,7 @@ fn main() {
     let ctx = sdl2::init().unwrap();
     let _ = image::init(INIT_PNG | INIT_JPG).unwrap();
 
-    let (width, height) = utils::get_window_dimensiton();
+    let (width, height) = utils::get_window_dimention();
     let video = ctx.video().unwrap();
 
     // Enable anti-aliasing
