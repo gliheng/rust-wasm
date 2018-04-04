@@ -8,6 +8,9 @@ use sdl2::rect::Rect;
 use sdl2::image::LoadTexture;
 use utils;
 
+const R1: Complex<f64> = Complex {re: -2.0, im: -1.0};
+const R2: Complex<f64> = Complex {re: 1.0, im: 1.0};
+const ITERATIONS: u32 = 50;
 
 pub struct Mandelbrot<'a> {
     creator: TextureCreator<WindowContext>,
@@ -47,7 +50,7 @@ impl<'a> Mandelbrot<'a> {
                 let x = i % width as usize;
                 let y = i / width as usize;
                 let point = pixel_to_point(x, y, (width as usize, height as usize), &self.r1, &self.r2);
-                let v = match escape_time(point, 100) {
+                let v = match escape_time(point, ITERATIONS) {
                     None => 0,
                     Some(count) => 255 - count as u8
                 };
@@ -63,7 +66,6 @@ impl<'a> Mandelbrot<'a> {
 
         self.surface = Some(surface);
         self.texture = Some(texture);
-
     }
 
     pub fn update_rect(&mut self, rect: &Rect) {
@@ -85,7 +87,13 @@ impl<'a> Mandelbrot<'a> {
     }
 
     pub fn reset(&mut self) {
-
+        if self.r1 == R1 && self.r2 == R2 {
+            // no need to reset
+            return;
+        }
+        self.r1 = R1;
+        self.r2 = R2;
+        self.update();
     }
 
     pub fn render(&mut self, canvas: &mut Canvas<Window>) {

@@ -78,6 +78,9 @@ impl<'a> App<'a> {
                 Event::Quit {..} | Event::KeyDown {keycode: Some(Keycode::Escape), ..} => {
                     process::exit(1);
                 },
+                Event::KeyDown {keycode: Some(Keycode::Space), ..} => {
+                    self.mandelbrot.reset();
+                },
                 Event::MouseButtonDown { mouse_btn: MouseButton::Left, x, y, .. } => {
                     self.start_point = Some(Point::new(x, y));
                 },
@@ -87,9 +90,11 @@ impl<'a> App<'a> {
                     }
                 },
                 Event::MouseButtonUp { mouse_btn: MouseButton::Left, .. } => {
-                    let rect = utils::rect_from_points(self.start_point.as_ref().unwrap(),
-                                                       self.drag_point.as_ref().unwrap());
-                    self.mandelbrot.update_rect(&rect);
+                    if self.start_point.is_some() && self.drag_point.is_some() {
+                        let rect = utils::rect_from_points(self.start_point.as_ref().unwrap(),
+                                                           self.drag_point.as_ref().unwrap());
+                        self.mandelbrot.update_rect(&rect);
+                    }
                     self.start_point = None;
                     self.drag_point = None;
                 },
