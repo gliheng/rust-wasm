@@ -32,12 +32,12 @@ impl<'a> Mandelbrot<'a> {
             r2,
         };
 
-        inst.update(r1, r2);
+        inst.update();
 
         inst
     }
 
-    pub fn update(&mut self, r1: Complex<f64>, r2: Complex<f64>) {
+    pub fn update(&mut self) {
         let (width, height) = utils::get_window_dimention();
 
         let mut surface = Surface::new(width, height, PixelFormatEnum::RGB24).unwrap();
@@ -46,7 +46,7 @@ impl<'a> Mandelbrot<'a> {
             for i in 0..(data.len() / 3) {
                 let x = i % width as usize;
                 let y = i / width as usize;
-                let point = pixel_to_point(x, y, (width as usize, height as usize), self.r1, self.r2);
+                let point = pixel_to_point(x, y, (width as usize, height as usize), &self.r1, &self.r2);
                 let v = match escape_time(point, 100) {
                     None => 0,
                     Some(count) => 255 - count as u8
@@ -67,11 +67,25 @@ impl<'a> Mandelbrot<'a> {
     }
 
     pub fn update_rect(&mut self, rect: &Rect) {
-        
+        let p1 = rect.top_left();
+        let p2 = rect.bottom_right();
+        let (width, height) = utils::get_window_dimention();
+        let width = width as usize;
+        let height = height as usize;
+        let r1 = pixel_to_point(p1.x() as usize, p1.y() as usize,
+                                (width, height),
+                                &self.r1, &self.r2);
+        let r2 = pixel_to_point(p2.x() as usize, p2.y() as usize,
+                                (width, height) as (usize, usize),
+                                &self.r1, &self.r2);
+
+        self.r1 = r1;
+        self.r2 = r2;
+        self.update();
     }
 
-    pub fn rect(&mut self) {
-        
+    pub fn reset(&mut self) {
+
     }
 
     pub fn render(&mut self, canvas: &mut Canvas<Window>) {
@@ -85,14 +99,14 @@ impl<'a> Mandelbrot<'a> {
 fn pixel_to_point(x: usize,
                   y: usize,
                   bounds: (usize, usize),
-                  upper_left: Complex<f64>,
-                  lower_right: Complex<f64>) -> Complex<f64> {
+                  top_left: &Complex<f64>,
+                  bottom_right: &Complex<f64>) -> Complex<f64> {
 
-    let (width, height) = (lower_right.re - upper_left.re,
-                           upper_left.im - lower_right.im);
+    let (width, height) = (bottom_right.re - top_left.re,
+                           top_left.im - bottom_right.im);
     Complex {
-        re: upper_left.re + x as f64 * width / bounds.0 as f64,
-        im: upper_left.im - y as f64 * height / bounds.1 as f64,
+        re: top_left.re + x as f64 * width / bounds.0 as f64,
+        im: top_left.im - y as f64 * height / bounds.1 as f64,
     }
 }
 
