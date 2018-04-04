@@ -21,7 +21,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> App {
-        let (width, height) = utils::get_window_dimensiton();
+        let (width, height) = utils::get_window_dimention();
 
         let ctx = sdl2::init().unwrap();
         let video = ctx.video().unwrap();
@@ -46,7 +46,7 @@ impl App {
             .unwrap();
 
         let events = ctx.event_pump().unwrap();
-        let mandelbrot = Mandelbrot::new();
+        let mandelbrot = Mandelbrot::new(&canvas);
         App { canvas, events, mandelbrot }
     }
 
