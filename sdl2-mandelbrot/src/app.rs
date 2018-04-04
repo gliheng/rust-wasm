@@ -13,14 +13,14 @@ use sdl2::video::Window;
 use utils;
 use mandelbrot::{Mandelbrot};
 
-pub struct App {
+pub struct App<'a> {
     canvas: Canvas<Window>,
     events: EventPump,
-    mandelbrot: Mandelbrot,
+    mandelbrot: Mandelbrot<'a>,
 }
 
-impl App {
-    pub fn new() -> App {
+impl<'a> App<'a> {
+    pub fn new() -> Self {
         let (width, height) = utils::get_window_dimention();
 
         let ctx = sdl2::init().unwrap();
