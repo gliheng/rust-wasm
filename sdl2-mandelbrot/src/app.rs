@@ -17,6 +17,8 @@ pub struct App<'a> {
     canvas: Canvas<Window>,
     events: EventPump,
     mandelbrot: Mandelbrot<'a>,
+    start_point: Option<Point>,
+    drag_point: Option<Point>,
 }
 
 impl<'a> App<'a> {
@@ -47,7 +49,12 @@ impl<'a> App<'a> {
 
         let events = ctx.event_pump().unwrap();
         let mandelbrot = Mandelbrot::new(&canvas);
-        App { canvas, events, mandelbrot }
+
+        App {
+            canvas, events, mandelbrot,
+            start_point: None,
+            drag_point: None,
+        }
     }
 
     pub fn start(&mut self) {
@@ -66,28 +73,42 @@ impl<'a> App<'a> {
     }
 
     fn mainloop(&mut self) {
-        let white = Color::RGB(255, 255, 255);
-        let black = Color::RGB(0, 0, 0);
-        let green = Color::RGB(0, 255, 0);
-
         for event in self.events.poll_iter() {
             match event {
                 Event::Quit {..} | Event::KeyDown {keycode: Some(Keycode::Escape), ..} => {
                     process::exit(1);
                 },
                 Event::MouseButtonDown { mouse_btn: MouseButton::Left, x, y, .. } => {
+                    self.start_point = Some(Point::new(x, y));
                 },
                 Event::MouseMotion { x, y, .. } => {
+                    if self.start_point.is_some() {
+                        self.drag_point = Some(Point::new(x, y));
+                    }
                 },
                 Event::MouseButtonUp { mouse_btn: MouseButton::Left, .. } => {
+                    let rect = utils::rect_from_points(self.start_point.as_ref().unwrap(),
+                                                       self.drag_point.as_ref().unwrap());
+                    self.mandelbrot.update_rect(&rect);
+                    self.start_point = None;
+                    self.drag_point = None;
                 },
                 _ => {}
             }
         }
 
+        let black = Color::RGB(0, 0, 0);
+        let green = Color::RGB(0, 255, 0);
+
         self.canvas.set_draw_color(black);
         self.canvas.clear();
         self.mandelbrot.render(&mut self.canvas);
+        if self.start_point.is_some() && self.drag_point.is_some() {
+            self.canvas.set_draw_color(green);
+            let rect = utils::rect_from_points(self.start_point.as_ref().unwrap(),
+                                               self.drag_point.as_ref().unwrap());
+            self.canvas.draw_rect(rect);
+        }
         self.canvas.present();
     }
 }

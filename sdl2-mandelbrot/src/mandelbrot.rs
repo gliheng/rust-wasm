@@ -65,6 +65,15 @@ impl<'a> Mandelbrot<'a> {
         self.texture = Some(texture);
 
     }
+
+    pub fn update_rect(&mut self, rect: &Rect) {
+        
+    }
+
+    pub fn rect(&mut self) {
+        
+    }
+
     pub fn render(&mut self, canvas: &mut Canvas<Window>) {
         if let Some(ref tex) = self.texture {
             canvas.copy(tex, None, None);
