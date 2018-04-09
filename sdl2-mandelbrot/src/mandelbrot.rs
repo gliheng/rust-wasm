@@ -1,4 +1,5 @@
 use num::Complex;
+use std::time::{ Duration, Instant };
 use sdl2::render::Canvas;
 use sdl2::video::{ Window, WindowContext };
 use sdl2::pixels::PixelFormatEnum;
@@ -12,15 +13,14 @@ const R1: Complex<f64> = Complex {re: -2.0, im: -1.0};
 const R2: Complex<f64> = Complex {re: 1.0, im: 1.0};
 const ITERATIONS: u32 = 50;
 
-pub struct Mandelbrot<'a> {
+pub struct Mandelbrot {
     creator: TextureCreator<WindowContext>,
-    surface: Option<Surface<'a>>,
     texture: Option<Texture>,
     r1: Complex<f64>,
     r2: Complex<f64>,
 }
 
-impl<'a> Mandelbrot<'a> {
+impl Mandelbrot {
     pub fn new (canvas: &Canvas<Window>) -> Self {
 
         let creator = canvas.texture_creator();
@@ -29,7 +29,6 @@ impl<'a> Mandelbrot<'a> {
         let r2 = Complex {re: 1.0, im: 1.0};
         let mut inst = Mandelbrot {
             creator,
-            surface: None,
             texture: None,
             r1,
             r2,
@@ -64,7 +63,6 @@ impl<'a> Mandelbrot<'a> {
         let texture = self.creator.create_texture_from_surface(&surface)
             .unwrap();
 
-        self.surface = Some(surface);
         self.texture = Some(texture);
     }
 
