@@ -23,7 +23,7 @@ export default {
       Module.startApp();
     } else {
       Module.addOnPostRun(() => {
-        // TODO remove this tick
+        // TODO: remove this tick
         setTimeout(() => {
           Module.startApp();
         }, 0);

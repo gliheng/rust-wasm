@@ -13,7 +13,7 @@
 
 const R1 = [-2.0, -1.0];
 const R2 = [1.0, 1.0];
-const ITERATIONS = 150;
+const ITERATIONS = 100;
 
 export default {
   props: {

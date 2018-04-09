@@ -11,7 +11,7 @@ use utils;
 
 const R1: Complex<f32> = Complex {re: -2.0, im: -1.0};
 const R2: Complex<f32> = Complex {re: 1.0, im: 1.0};
-const ITERATIONS: u32 = 150;
+const ITERATIONS: u32 = 100;
 
 pub struct Mandelbrot {
     creator: TextureCreator<WindowContext>,
@@ -47,6 +47,7 @@ impl Mandelbrot {
         let t0 = Instant::now();
         let mut surface = Surface::new(width, height, PixelFormatEnum::RGB24).unwrap();
         surface.with_lock_mut(|data: &mut [u8]| {
+            let t0 = Instant::now();
             for i in 0..(data.len() / 3) {
                 let x = i % width as usize;
                 let y = i / width as usize;
@@ -60,6 +61,8 @@ impl Mandelbrot {
                 data[i * 3 + 1] = v;
                 data[i * 3 + 2] = v;
             }
+            println!("rust mandelbrot: {:.3} ms", format_duration(self.render_time) * 1000.);
+
         });
 
         let texture = self.creator.create_texture_from_surface(&surface)

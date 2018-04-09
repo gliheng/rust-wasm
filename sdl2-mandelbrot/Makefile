@@ -19,7 +19,7 @@ clean:
 	rm static/app.js static/sdl2_gallery.wasm
 
 release:
-	wasm-gc ./static/sdl2_gallery.wasm
+	wasm-gc ./$(OUTPUT)sdl2_mandelbrot.wasm
 
 serve:
 	cd static && npm run serve
