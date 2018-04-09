@@ -1,5 +1,5 @@
 {
-  "name": "rust-loader",
+  "name": "sdl2-mandelbrot",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,8 +12,10 @@
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.0.0-beta.6",
     "@vue/cli-service": "^3.0.0-beta.6",
-    "rust-wasm-loader": "^0.1.2",
-    "vue-template-compiler": "^2.5.13"
+    "vue-template-compiler": "^2.5.13",
+    "less-loader": "^4.0.5",
+    "node-sass": "^4.7.2",
+    "sass-loader": "^6.0.6"
   },
   "browserslist": [
     "> 1%",

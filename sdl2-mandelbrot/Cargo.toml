@@ -1,5 +1,5 @@
 [package]
-name = "rust_loader"
+name = "sdl2-mandelbrot"
 version = "0.1.0"
 authors = ["Amadeus <gliheng@gmail.com>"]
 

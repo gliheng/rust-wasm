@@ -11,7 +11,7 @@ use utils;
 
 const R1: Complex<f64> = Complex {re: -2.0, im: -1.0};
 const R2: Complex<f64> = Complex {re: 1.0, im: 1.0};
-const ITERATIONS: u32 = 50;
+const ITERATIONS: u32 = 150;
 
 pub struct Mandelbrot {
     creator: TextureCreator<WindowContext>,
@@ -47,7 +47,6 @@ impl Mandelbrot {
         let t0 = Instant::now();
         let mut surface = Surface::new(width, height, PixelFormatEnum::RGB24).unwrap();
         surface.with_lock_mut(|data: &mut [u8]| {
-
             for i in 0..(data.len() / 3) {
                 let x = i % width as usize;
                 let y = i / width as usize;
@@ -70,7 +69,7 @@ impl Mandelbrot {
         self.texture = Some(texture);
 
         self.render_time = t0.elapsed();
-        println!("render_time: {:.3}", format_duration(self.render_time));
+        println!("render time: {:.3}ms", format_duration(self.render_time) * 1000.);
     }
 
     pub fn update_rect(&mut self, rect: &Rect) {
@@ -136,4 +135,15 @@ pub fn escape_time(c: Complex<f64>, limit: u32) -> Option<u32> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Complex;
+    use super::escape_time;
+    #[test]
+    fn it_works() {
+        println!("{:?}", escape_time(Complex{re: -1.0, im: 1.0}, 50));
+        println!("{:?}", escape_time(Complex{re: -1.0, im: 0.7}, 50));
+    }
 }
