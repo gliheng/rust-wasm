@@ -1,15 +1,18 @@
 <template>
   <div id="app">
     <div>
-      <mandelbrot />
+      <mandelbrot :width="640" :height="500"/>
+      <mandelbrot-native :width="640" :height="500"/>
     </div>
   </div>
 </template>
 
 <script>
 import Mandelbrot from './Mandelbrot';
+import MandelbrotNative from './Mandelbrot-Native';
+
 export default {
-  components: { Mandelbrot }
+  components: { Mandelbrot, MandelbrotNative }
 }
 </script>
 

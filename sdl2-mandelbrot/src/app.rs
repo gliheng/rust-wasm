@@ -1,11 +1,9 @@
 use std::process;
-use std::thread::sleep;
-use std::time::{Instant, Duration};
 use sdl2;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::mouse::MouseButton;
-use sdl2::rect::{Rect, Point};
+use sdl2::rect::{Point};
 use sdl2::keyboard::Keycode;
 use sdl2::render::Canvas;
 use sdl2::EventPump;
@@ -59,10 +57,10 @@ impl App {
 
     pub fn start(&mut self) {
         #[cfg(target_os = "emscripten")]
-        use emscripten;
-
-        #[cfg(target_os = "emscripten")]
-        emscripten::set_main_loop_callback(self.mainloop);
+        {
+            use emscripten;
+            emscripten::set_main_loop_callback(|| self.mainloop());
+        }
 
         #[cfg(not(target_os = "emscripten"))]
         {
@@ -112,7 +110,7 @@ impl App {
             self.canvas.set_draw_color(green);
             let rect = utils::rect_from_points(self.start_point.as_ref().unwrap(),
                                                self.drag_point.as_ref().unwrap());
-            self.canvas.draw_rect(rect);
+            let _ = self.canvas.draw_rect(rect);
         }
         self.canvas.present();
     }

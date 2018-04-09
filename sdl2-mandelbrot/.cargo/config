@@ -1,4 +1,4 @@
 [target.wasm32-unknown-emscripten]
 rustflags = [
-    "-Clink-args=-s USE_SDL=2 -s USE_SDL_IMAGE=2",
+    "-Clink-args=-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s EXTRA_EXPORTED_RUNTIME_METHODS=['addOnPostRun']",
 ]

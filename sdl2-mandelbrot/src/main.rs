@@ -12,13 +12,25 @@ mod mandelbrot;
 
 use app::App;
 
+#[cfg(target_os = "emscripten")]
 fn main() {
-    #[cfg(target_os = "emscripten")]
     stdweb::initialize();
 
+    fn start() {
+        let mut app = App::new();
+        app.start();
+        stdweb::event_loop();
+    }
+
+    js! {
+        Module.startApp = function() {
+            @{start}();
+        };
+    }
+}
+
+#[cfg(not(target_os = "emscripten"))]
+fn main() {
     let mut app = App::new();
     app.start();
-
-    #[cfg(target_os = "emscripten")]
-    stdweb::event_loop();
 }

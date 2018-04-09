@@ -9,16 +9,16 @@ use sdl2::rect::Rect;
 use sdl2::image::LoadTexture;
 use utils;
 
-const R1: Complex<f64> = Complex {re: -2.0, im: -1.0};
-const R2: Complex<f64> = Complex {re: 1.0, im: 1.0};
+const R1: Complex<f32> = Complex {re: -2.0, im: -1.0};
+const R2: Complex<f32> = Complex {re: 1.0, im: 1.0};
 const ITERATIONS: u32 = 150;
 
 pub struct Mandelbrot {
     creator: TextureCreator<WindowContext>,
     texture: Option<Texture>,
     render_time: Duration,
-    r1: Complex<f64>,
-    r2: Complex<f64>,
+    r1: Complex<f32>,
+    r2: Complex<f32>,
 }
 
 impl Mandelbrot {
@@ -65,11 +65,10 @@ impl Mandelbrot {
         let texture = self.creator.create_texture_from_surface(&surface)
             .unwrap();
 
-
         self.texture = Some(texture);
 
         self.render_time = t0.elapsed();
-        println!("render time: {:.3}ms", format_duration(self.render_time) * 1000.);
+        println!("rust mandelbrot render time: {:.3} ms", format_duration(self.render_time) * 1000.);
     }
 
     pub fn update_rect(&mut self, rect: &Rect) {
@@ -102,31 +101,31 @@ impl Mandelbrot {
 
     pub fn render(&mut self, canvas: &mut Canvas<Window>) {
         if let Some(ref tex) = self.texture {
-            canvas.copy(tex, None, None);
+            let _ = canvas.copy(tex, None, None);
         }
     }
 }
 
 
-fn format_duration(dur: Duration) -> f64 {
-    dur.as_secs() as f64 + dur.subsec_nanos() as f64 / 1_000_000_000.
+fn format_duration(dur: Duration) -> f32 {
+    dur.as_secs() as f32 + dur.subsec_nanos() as f32 / 1_000_000_000.
 }
 
 fn pixel_to_point(x: usize,
                   y: usize,
                   bounds: (usize, usize),
-                  top_left: &Complex<f64>,
-                  bottom_right: &Complex<f64>) -> Complex<f64> {
+                  top_left: &Complex<f32>,
+                  bottom_right: &Complex<f32>) -> Complex<f32> {
 
     let (width, height) = (bottom_right.re - top_left.re,
                            top_left.im - bottom_right.im);
     Complex {
-        re: top_left.re + x as f64 * width / bounds.0 as f64,
-        im: top_left.im - y as f64 * height / bounds.1 as f64,
+        re: top_left.re + x as f32 * width / bounds.0 as f32,
+        im: top_left.im - y as f32 * height / bounds.1 as f32,
     }
 }
 
-pub fn escape_time(c: Complex<f64>, limit: u32) -> Option<u32> {
+pub fn escape_time(c: Complex<f32>, limit: u32) -> Option<u32> {
     let mut z = Complex {re: 0.0, im: 0.0};
     for i in 0..limit {
         z = z*z + c;
