@@ -1,5 +1,5 @@
 use std::process;
-use sdl2;
+use sdl2::{ self, Sdl };
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::mouse::MouseButton;
@@ -10,20 +10,22 @@ use sdl2::EventPump;
 use sdl2::video::Window;
 use utils;
 use mandelbrot::{Mandelbrot};
+use sdl2::ttf::Sdl2TtfContext;
+use utils::glyph_renderer::GlyphRenderer;
 
-pub struct App {
+pub struct App<'a> {
     canvas: Canvas<Window>,
     events: EventPump,
     mandelbrot: Mandelbrot,
     start_point: Option<Point>,
     drag_point: Option<Point>,
+    glyph_renderer: GlyphRenderer<'a>,
 }
 
-impl App {
-    pub fn new() -> Self {
+impl<'a> App<'a> {
+    pub fn new(ctx: &Sdl, ttf_context: &'a Sdl2TtfContext) -> Self {
         let (width, height) = utils::get_window_dimention();
 
-        let ctx = sdl2::init().unwrap();
         let video = ctx.video().unwrap();
 
         // Enable anti-aliasing
@@ -48,10 +50,14 @@ impl App {
         let events = ctx.event_pump().unwrap();
         let mandelbrot = Mandelbrot::new(&canvas);
 
+        let font = ttf_context.load_font("./assets/Supermercado-Regular.ttf", 50).unwrap();
+        let glyph_renderer = GlyphRenderer::new(canvas.texture_creator(), font, Color::RGB(0, 255, 0));
+
         App {
             canvas, events, mandelbrot,
             start_point: None,
             drag_point: None,
+            glyph_renderer,
         }
     }
 
@@ -106,11 +112,18 @@ impl App {
         self.canvas.set_draw_color(black);
         self.canvas.clear();
         self.mandelbrot.render(&mut self.canvas);
+
         if self.start_point.is_some() && self.drag_point.is_some() {
             self.canvas.set_draw_color(green);
             let rect = utils::rect_from_points(self.start_point.as_ref().unwrap(),
                                                self.drag_point.as_ref().unwrap());
             let _ = self.canvas.draw_rect(rect);
+        }
+
+        if let Some(t) = self.mandelbrot.render_time {
+            let n = utils::format_duration(t) * 1000.;
+            let label = format!("{:.3}", n);
+            self.glyph_renderer.render(&mut self.canvas, &label, 10, 10);
         }
         let _ = self.canvas.present();
     }

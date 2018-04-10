@@ -11,16 +11,11 @@ mod app;
 mod mandelbrot;
 
 use app::App;
+use sdl2::ttf;
 
 #[cfg(target_os = "emscripten")]
 fn main() {
     stdweb::initialize();
-
-    fn start() {
-        let mut app = App::new();
-        app.start();
-        stdweb::event_loop();
-    }
 
     js! {
         Module.startApp = function() {
@@ -31,6 +26,17 @@ fn main() {
 
 #[cfg(not(target_os = "emscripten"))]
 fn main() {
-    let mut app = App::new();
-    app.start();
+    start();
 }
+
+fn start() {
+    let ctx = sdl2::init().unwrap();
+    let ttf_context = ttf::init().unwrap();
+
+    let mut app = App::new(&ctx, &ttf_context);
+    app.start();
+
+    #[cfg(target_os = "emscripten")]
+    stdweb::event_loop();
+}
+

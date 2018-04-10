@@ -16,7 +16,7 @@ const ITERATIONS: u32 = 100;
 pub struct Mandelbrot {
     creator: TextureCreator<WindowContext>,
     texture: Option<Texture>,
-    render_time: Duration,
+    pub render_time: Option<Duration>,
     r1: Complex<f32>,
     r2: Complex<f32>,
 }
@@ -31,7 +31,7 @@ impl Mandelbrot {
         let mut inst = Mandelbrot {
             creator,
             texture: None,
-            render_time: Duration::from_secs(0),
+            render_time: None,
             r1,
             r2,
         };
@@ -62,13 +62,12 @@ impl Mandelbrot {
             }
         });
 
+        self.render_time = Some(t0.elapsed());
+
         let texture = self.creator.create_texture_from_surface(&surface)
             .unwrap();
 
         self.texture = Some(texture);
-
-        self.render_time = t0.elapsed();
-        println!("rust mandelbrot render time: {:.3} ms", format_duration(self.render_time) * 1000.);
     }
 
     pub fn update_rect(&mut self, rect: &Rect) {
@@ -106,10 +105,6 @@ impl Mandelbrot {
     }
 }
 
-
-fn format_duration(dur: Duration) -> f32 {
-    dur.as_secs() as f32 + dur.subsec_nanos() as f32 / 1_000_000_000.
-}
 
 fn pixel_to_point(x: usize,
                   y: usize,

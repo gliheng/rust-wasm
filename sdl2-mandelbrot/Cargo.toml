@@ -10,4 +10,4 @@ num = "0.1.42"
 [dependencies.sdl2]
 version = "0.31.0"
 default-features = false
-features = ["image", "unsafe_textures"]
+features = ["image", "ttf", "unsafe_textures"]

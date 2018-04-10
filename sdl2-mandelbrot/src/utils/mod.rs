@@ -1,3 +1,6 @@
+pub mod glyph_renderer;
+
+use std::time::Duration;
 use sdl2::rect::{Rect, Point};
 
 #[cfg(target_os = "emscripten")]
@@ -27,4 +30,8 @@ pub fn rect_from_points(p1: &Point, p2: &Point) -> Rect {
               y1.min(y2),
               (x1 - x2).abs() as u32,
               (y1 - y2).abs() as u32)
+}
+
+pub fn format_duration(dur: Duration) -> f32 {
+    dur.as_secs() as f32 + dur.subsec_nanos() as f32 / 1_000_000_000.
 }
