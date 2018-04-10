@@ -11,23 +11,23 @@
 import Mandelbrot from './Mandelbrot';
 import MandelbrotWasm from './Mandelbrot-Wasm';
 
-function linkNodes(nodes, events) {
+function linkNodes(nodes, targets, events) {
   for (let node of nodes) {
     for (let evtName of events) {
       node.addEventListener(evtName, function(evt) {
         if (evt.relatedTarget) {
           return;
         }
-        dispatch(evtName, evt, nodes, node);
+        dispatch(evtName, evt, targets, nodes, node);
       });
     }
   }
 }
 
-function dispatch(evtName, evt, nodes, except) {
-  let {left, top} = except.getBoundingClientRect();
-  for (let node of nodes) {
-    if (node == except) continue;
+function dispatch(evtName, evt, targets, nodes, except) {
+  let { left, top } = except.getBoundingClientRect();
+  nodes.forEach((node, i) => {
+    if (node == except) return;
 
     let {left: left1, top: top1} = node.getBoundingClientRect();
     var e = new MouseEvent(evtName, {
@@ -37,15 +37,18 @@ function dispatch(evtName, evt, nodes, except) {
       clientX: evt.clientX - left + left1,
       clientY: evt.clientY - top + top1,
     });
-    node.dispatchEvent(e);
-  }
+    targets[i].dispatchEvent(e);
+  });
 }
 
 export default {
   components: { Mandelbrot, MandelbrotWasm },
   mounted() {
+let a = this.$refs.jsM;
+let b = this.$refs.wasmM;
     linkNodes(
-      [this.$refs.jsM.$vnode.elm, this.$refs.wasmM.$vnode.elm],
+      [a.$vnode.elm, b.$vnode.elm],
+      [a.getTarget(), b.getTarget()],
       ['mousedown', 'mousemove', 'mouseup'],
     );
   },

@@ -30,6 +30,11 @@ export default {
       });
     }
   },
+  methods: {
+    getTarget() {
+      return this.$refs.canvas;
+    },
+  }
 }
 </script>
 

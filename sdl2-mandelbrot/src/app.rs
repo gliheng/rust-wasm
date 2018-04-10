@@ -112,6 +112,6 @@ impl App {
                                                self.drag_point.as_ref().unwrap());
             let _ = self.canvas.draw_rect(rect);
         }
-        self.canvas.present();
+        let _ = self.canvas.present();
     }
 }

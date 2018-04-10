@@ -41,6 +41,9 @@ export default {
     document.removeEventListener('keypress', this.onKeyPress);
   },
   methods: {
+    getTarget() {
+      return this.$refs.container;
+    },
     onMouseDown(evt) {
       this._dragRectContext = this.$refs.dragRect.getContext('2d');
       this._rect = this.$refs.container.getBoundingClientRect();
