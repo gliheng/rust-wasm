@@ -50,8 +50,8 @@ impl<'a> App<'a> {
         let events = ctx.event_pump().unwrap();
         let mandelbrot = Mandelbrot::new(&canvas);
 
-        let font = ttf_context.load_font("./assets/Supermercado-Regular.ttf", 50).unwrap();
-        let glyph_renderer = GlyphRenderer::new(canvas.texture_creator(), font, Color::RGB(0, 255, 0));
+        let font = ttf_context.load_font("./assets/Supermercado-Regular.ttf", 40).unwrap();
+        let glyph_renderer = GlyphRenderer::new(canvas.texture_creator(), font, Color::RGB(0, 126, 255));
 
         App {
             canvas, events, mandelbrot,
@@ -65,6 +65,9 @@ impl<'a> App<'a> {
         #[cfg(target_os = "emscripten")]
         {
             use emscripten;
+            unsafe {
+                emscripten::emscripten_cancel_main_loop();
+            }
             emscripten::set_main_loop_callback(|| self.mainloop());
         }
 
@@ -122,7 +125,7 @@ impl<'a> App<'a> {
 
         if let Some(t) = self.mandelbrot.render_time {
             let n = utils::format_duration(t) * 1000.;
-            let label = format!("{:.3}", n);
+            let label = format!("{:.3} ms", n);
             self.glyph_renderer.render(&mut self.canvas, &label, 10, 10);
         }
         let _ = self.canvas.present();

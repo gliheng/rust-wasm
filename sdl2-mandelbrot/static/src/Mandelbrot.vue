@@ -4,6 +4,7 @@
       @mousemove="onMouseMove"
       @mouseup="onMouseUp"
       ref="container">
+    <h1 v-if="renderTime != 0">{{ renderTime.toFixed(3) }} ms</h1>
     <canvas :width="width" :height="height" ref="canvas"></canvas>
     <canvas :width="width" :height="height" ref="dragRect"></canvas>
   </div>
@@ -28,6 +29,7 @@ export default {
   },
   data() {
     return {
+      renderTime: 0,
       startPoint: null,
       r1: R1,
       r2: R2,
@@ -100,7 +102,7 @@ export default {
     },
     renderMandelbrot() {
       let ctx = this.$refs.canvas.getContext('2d');
-      let t0 = Date.now();
+      let t0 = performance.now();
       let imgData = ctx.createImageData(this.width, this.height);
       let { data } = imgData;
       for (let i = 0; i < this.width; i++) {
@@ -121,7 +123,7 @@ export default {
       }
 
       ctx.putImageData(imgData, 0, 0);
-      console.log('js mandelbrot render time: %s ms', Date.now() - t0);
+      this.renderTime = performance.now() - t0;
     },
   }
 };
@@ -161,6 +163,15 @@ function escapeTime(c, limit) {
   position: relative;
   display: inline-block;
   background-color: white;
+  h1 {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    margin: 0;
+    pointer-events: none;
+    color: #007eff;
+  }
   canvas {
     position: absolute;
     top: 0;

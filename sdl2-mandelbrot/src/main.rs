@@ -19,9 +19,13 @@ fn main() {
 
     js! {
         Module.startApp = function() {
-            @{start}();
+            try {
+                @{start}();
+            } catch(e) { }
         };
     }
+
+    stdweb::event_loop();
 }
 
 #[cfg(not(target_os = "emscripten"))]
@@ -35,8 +39,5 @@ fn start() {
 
     let mut app = App::new(&ctx, &ttf_context);
     app.start();
-
-    #[cfg(target_os = "emscripten")]
-    stdweb::event_loop();
 }
 

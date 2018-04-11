@@ -1,7 +1,11 @@
 <template>
   <div id="app">
     <div>
+      <h1>js</h1>
       <mandelbrot ref="jsM" :width="640" :height="500"/>
+    </div>
+    <div>
+      <h1>rust</h1>
       <mandelbrot-wasm ref="wasmM" :width="640" :height="500"/>
     </div>
   </div>
@@ -65,6 +69,8 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  display: flex;
+  justify-content: center;
 }
 input {
   width: 50px;
