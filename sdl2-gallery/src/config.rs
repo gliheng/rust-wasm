@@ -1,58 +1,50 @@
 use std::collections::HashMap;
 use model::Gallery;
-use std::sync::RwLock;
-use std::any::Any;
-use std::mem::transmute;
+use stdweb::unstable::TryInto;
+use utils;
 
 lazy_static! {
-    pub static ref CONFIG: RwLock<Config> = RwLock::new(Config::new());
+    pub static ref CONFIG: Config = Config::new();
 }
 
 pub struct Config {
-    fields: HashMap<&'static str, [usize;2]>,
+    fields: HashMap<&'static str, u32>,
 }
 
 impl Config {
     pub fn new() -> Config {
+        let mut fields = HashMap::new();
+        let (width, height) = utils::get_window_dimention();
+        unsafe {
+            fields.insert("width", width);
+            fields.insert("height", height);
+            fields.insert("gallery", Box::into_raw(Box::new(get_gallery())) as u32);
+        }
+
         Config {
-            fields: HashMap::new()
+            fields
         }
     }
-    pub fn get_instance() -> &'static RwLock<Config> {
+    pub fn get_instance() -> &'static Config {
         &CONFIG
     }
-    pub fn set(&mut self, key: &'static str, v: &Any) {
-        unsafe {
-            self.fields.insert(key, transmute::<&Any, [usize;2]>(v));
-        }
-    }
-    pub fn get(&self, key: &'static str) -> Option<&'static Any> {
-        match self.fields.get(key) {
-            Some(v) => {
-                unsafe {
-                    let p = transmute::<[usize;2], &Any>(*v);
-                    Some(p)
-                }
-            },
-            None => None,
-        }
-    }
     pub fn get_u32(key: &'static str) -> Option<&'static u32> {
-        let r = CONFIG.read().unwrap();
-        if let Some(v) = r.get(key) {
-            unsafe {
-                return (*v).downcast_ref::<u32>();
-            }
-        }
-        None
+        CONFIG.fields.get(key)
     }
     pub fn get_gallery() -> Option<&'static Gallery> {
-        let r = CONFIG.read().unwrap();
-        if let Some(v) = r.get("gallery") {
+        if let Some(&v) = CONFIG.fields.get("gallery") {
             unsafe {
-                return (*v).downcast_ref::<Gallery>();
+                let g: &Gallery = &*(v as *const Gallery);
+                return Some(g);
             }
         }
         None
     }
+}
+
+fn get_gallery() -> Gallery {
+    let gallery = js! {
+        return Module.gallery;
+    };
+    gallery.try_into().unwrap()
 }

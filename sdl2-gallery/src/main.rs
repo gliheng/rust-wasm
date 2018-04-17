@@ -21,7 +21,6 @@ mod gesture;
 mod actions;
 
 use std::process;
-use stdweb::unstable::TryInto;
 use sdl2::pixels::{Color, PixelFormatEnum};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -31,7 +30,7 @@ use model::Gallery;
 use view::{GalleryView, Preview};
 use display::{Stage, Display};
 use std::rc::Rc;
-use config::Config;
+use config::{Config};
 use sdl2::image::{self, INIT_JPG, INIT_PNG};
 #[cfg(feature = "fps")]
 use frame_rate::FrameRate;
@@ -44,15 +43,13 @@ fn main() {
     use emscripten::{emscripten};
     stdweb::initialize();
 
-    let gallery = js! {
-        return Module.gallery;
-    };
-    let gallery: Gallery = gallery.try_into().unwrap();
+    let gallery: &Gallery = Config::get_gallery().expect("Cannot find gallery config");
 
     let ctx = sdl2::init().unwrap();
     let _ = image::init(INIT_PNG | INIT_JPG).unwrap();
 
-    let (width, height) = utils::get_window_dimention();
+    let width = *Config::get_u32("width").unwrap();
+    let height = *Config::get_u32("height").unwrap();
     let video = ctx.video().unwrap();
 
     // Enable anti-aliasing
@@ -76,13 +73,6 @@ fn main() {
 
     let black = Color::RGB(0, 0, 0);
     let mut events = ctx.event_pump().unwrap();
-
-    let mut config = Config::get_instance();
-    if let Ok(mut c) = config.write() {
-        c.set("gallery", &gallery);
-        c.set("width", &width);
-        c.set("height", &height);
-    }
 
     let stage = Stage::new(canvas.texture_creator());
     {
